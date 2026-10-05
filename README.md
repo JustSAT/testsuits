@@ -102,8 +102,22 @@ All runtime configuration is controlled by `.env`. Copy `.env.example` and tweak
 | `API_PORT`         | Port the Express API listens on (inside the container)    |
 | `WEB_PORT`         | Port the Vite dev server listens on                       |
 | `VITE_API_URL`     | URL the **browser** uses to reach the API                 |
+| `VITE_DEFAULT_LANGUAGE` | Optional UI language for first-time visitors (`en` or `fr`, baked in at build time). Empty = follow the browser language. A language picked in the switcher is always remembered. |
+| `VITE_THEME_URL`   | Optional base URL of a deployment theme (e.g. `/theme`, baked in at build time). Empty = stock TestSuits look. See *Theming a deployment*. |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated list of origins allowed to call the API. Leave empty in dev for auto-reflect. **Required in production** — an empty list denies all cross-origin requests. |
 | `TRUST_PROXY`      | Number of reverse-proxy hops to trust for `X-Forwarded-For` (e.g. `1` behind a single LB). Without this, per-IP rate limits collapse every request onto the proxy IP. |
+
+### Theming a deployment
+
+Set `VITE_THEME_URL` at build time to restyle one deployment without forking the UI. The URL must serve:
+
+| File            | Purpose |
+| --------------- | ------- |
+| `theme.css`     | Overrides the palette and font variables declared on `:root` in `frontend/src/index.css` (`--brand-*`, `--slate-*` as `R G B` triplets, `--font-sans`). Use `html:root` / `html.dark:root` selectors so they win over the defaults. |
+| `favicon.svg`   | Browser tab icon. |
+| `mark.svg`, `mark-dark.svg` | Logo mark shown before the wordmark (light and dark mode). |
+
+Serve the files from your reverse proxy (or any static host); the theme is linked in `index.html`, so it applies before first paint.
 
 ### Host port overrides
 
@@ -448,6 +462,7 @@ backend/
     schema.prisma      Data model
     seed.ts            Generic demo seed (shipped publicly)
     seed.hapster.ts    Local-only seed extension (gitignored — optional)
+    seed.*.local.ts    More local-only seed extensions (gitignored — optional)
     migrations/        Generated Prisma migrations
   src/
     app.ts             Express setup + router mounting
@@ -516,7 +531,7 @@ docker compose up -d db minio minio-init
 
 ### Extending the seed with local fixtures
 
-`prisma/seed.ts` automatically loads `prisma/seed.hapster.ts` if the file is present. That filename is gitignored, as is anything matching `seed.*.local.ts`. Export a default async function:
+`prisma/seed.ts` automatically loads `prisma/seed.hapster.ts` if the file is present, then every `prisma/seed.*.local.ts` file in alphabetical order. Both patterns are gitignored, so you can keep one file per internal tenant (e.g. `seed.acme-internal.local.ts`). Each file exports a default async function:
 
 ```ts
 // backend/prisma/seed.hapster.ts

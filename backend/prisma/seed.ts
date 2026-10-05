@@ -1,6 +1,7 @@
 import { PrismaClient, Priority, TestLevel } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { randomBytes, createHash } from "crypto";
+import { readdirSync } from "fs";
 
 const prisma = new PrismaClient();
 
@@ -940,16 +941,26 @@ async function main() {
     });
   }
 
-  // Optional local-only extension (gitignored). Present on developer machines
-  // that need extra tenant fixtures on top of the generic demo. Safe no-op
-  // when the file is absent, which is the case for the public repo.
-  try {
-    const mod: { default?: (p: typeof prisma) => Promise<void> } = await import("./seed.hapster");
-    if (typeof mod.default === "function") {
-      await mod.default(prisma);
+  // Optional local-only extensions (gitignored): seed.hapster.ts, then every
+  // seed.*.local.ts in alphabetical order. Present on developer machines that
+  // need extra tenant fixtures on top of the generic demo. Safe no-op when
+  // the files are absent, which is the case for the public repo.
+  const localSeeds = [
+    "./seed.hapster",
+    ...readdirSync(__dirname)
+      .filter((f) => /^seed\..+\.local\.ts$/.test(f))
+      .sort()
+      .map((f) => `./${f.replace(/\.ts$/, "")}`),
+  ];
+  for (const path of localSeeds) {
+    try {
+      const mod: { default?: (p: typeof prisma) => Promise<void> } = await import(path);
+      if (typeof mod.default === "function") {
+        await mod.default(prisma);
+      }
+    } catch (e: any) {
+      if (e?.code !== "ERR_MODULE_NOT_FOUND" && e?.code !== "MODULE_NOT_FOUND") throw e;
     }
-  } catch (e: any) {
-    if (e?.code !== "ERR_MODULE_NOT_FOUND" && e?.code !== "MODULE_NOT_FOUND") throw e;
   }
 
   console.log("\nSeed complete.");

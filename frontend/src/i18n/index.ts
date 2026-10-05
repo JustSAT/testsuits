@@ -11,6 +11,13 @@ export const SUPPORTED_LANGUAGES = [
 
 export type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]["code"];
 
+// Optional build-time default (VITE_DEFAULT_LANGUAGE). When set, a first visit
+// uses it instead of the browser language; a language picked in the switcher
+// is still remembered.
+const configuredDefault = SUPPORTED_LANGUAGES.find(
+  (l) => l.code === import.meta.env.VITE_DEFAULT_LANGUAGE,
+)?.code;
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -19,11 +26,11 @@ i18n
       en: { translation: en },
       fr: { translation: fr },
     },
-    fallbackLng: "en",
+    fallbackLng: configuredDefault ? [configuredDefault, "en"] : "en",
     supportedLngs: SUPPORTED_LANGUAGES.map((l) => l.code),
     interpolation: { escapeValue: false },
     detection: {
-      order: ["localStorage", "navigator"],
+      order: configuredDefault ? ["localStorage"] : ["localStorage", "navigator"],
       caches: ["localStorage"],
       lookupLocalStorage: "ts_lang",
     },

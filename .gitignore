@@ -14,6 +14,9 @@ postgres-data/
 # Kubernetes deployment manifests & production Dockerfiles (local-only)
 k8s/
 
+# Host deployment scripts, configs and secrets (local-only)
+deploy/
+
 # Local-only seed extensions (per-developer fixtures — not shipped publicly)
 backend/prisma/seed.hapster.ts
 backend/prisma/seed.*.local.ts
