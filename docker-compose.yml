@@ -84,6 +84,10 @@ services:
       APP_URL: ${APP_URL:-http://localhost:5173}
       GMAIL_USER: ${GMAIL_USER:-}
       GMAIL_PASSWORD: ${GMAIL_PASSWORD:-}
+      GRAPH_TENANT_ID: ${GRAPH_TENANT_ID:-}
+      GRAPH_CLIENT_ID: ${GRAPH_CLIENT_ID:-}
+      GRAPH_CLIENT_SECRET: ${GRAPH_CLIENT_SECRET:-}
+      GRAPH_SENDER: ${GRAPH_SENDER:-}
     ports:
       - "${API_PORT:-4000}:4000"
     depends_on:

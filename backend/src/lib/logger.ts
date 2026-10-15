@@ -44,6 +44,8 @@ export const logger = pino({
       "*.secret",
       "*.signingSecret",
       "*.*.secret",
+      // Microsoft Graph (Entra app) mailer credential
+      "*.clientSecret",
       // SAML / SSO
       "*.privateKey",
       "*.certificate",

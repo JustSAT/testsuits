@@ -153,7 +153,7 @@ API tokens: [id.atlassian.com/manage-profile/security/api-tokens](https://id.atl
 
 ### Email
 
-Outgoing email (password reset, team invites) is sent via SMTP. In dev the compose stack ships a [Mailpit](https://github.com/axllent/mailpit) container that catches every message — no real mailbox required.
+Outgoing email (password reset, team invites) is sent via SMTP, or through Microsoft 365 when the `GRAPH_*` variables are set. In dev the compose stack ships a [Mailpit](https://github.com/axllent/mailpit) container that catches every message — no real mailbox required.
 
 | Variable            | Default                                      | Purpose                                                      |
 | ------------------- | -------------------------------------------- | ------------------------------------------------------------ |
@@ -161,6 +161,8 @@ Outgoing email (password reset, team invites) is sent via SMTP. In dev the compo
 | `MAIL_FROM`         | `TestSuits <no-reply@testsuits.local>`       | From header on every message                                 |
 | `APP_URL`           | `http://localhost:5173`                      | Base URL used to build links (reset, invite) in email bodies |
 | `MAILPIT_SMTP_PORT` | `1025`                                       | Host-side SMTP port for Mailpit                              |
+| `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET` | — | Entra app (client credentials) allowed to send as `GRAPH_SENDER` |
+| `GRAPH_SENDER`      | —                                            | Microsoft 365 mailbox to send as. All four `GRAPH_*` set = Graph takes priority over Gmail/SMTP, and `MAIL_FROM` is ignored |
 | `MAILPIT_UI_PORT`   | `8025`                                       | Host-side web UI for Mailpit                                 |
 
 Open [http://localhost:8025](http://localhost:8025) to read every email the app sends. For production, set `SMTP_URL` to your provider's URL (e.g. `smtps://postmaster@mg.example.com:KEY@smtp.mailgun.org:465`) — no code changes needed.
