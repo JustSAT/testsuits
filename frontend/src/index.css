@@ -31,6 +31,10 @@ html, body, #root {
 
 html {
   color-scheme: light;
+  /* One scale for the whole app: Tailwind sizes are in rem, so text, spacing,
+     controls and the sidebar all follow this. 106.25% = 17px at the browser
+     default, which puts body text (text-sm) at ~15px like Qase's. */
+  font-size: 106.25%;
 }
 html.dark {
   color-scheme: dark;

@@ -135,7 +135,7 @@ function KindColumn({
           >
             <div className="min-w-0">
               <div className="text-sm font-medium truncate">{o.label}</div>
-              <div className="text-[11px] text-slate-500 font-mono">{o.code}</div>
+              <div className="text-[0.6875rem] text-slate-500 font-mono">{o.code}</div>
             </div>
             {canEdit && (
               o.deletedAt ? (
@@ -167,11 +167,11 @@ function KindColumn({
       </ul>
       {canEdit && (
         <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-          <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+          <div className="text-[0.6875rem] font-semibold text-slate-500 uppercase tracking-wide">
             {t("run_options.add_new")}
           </div>
           <div>
-            <label className="block text-[11px] text-slate-500 mb-1">
+            <label className="block text-[0.6875rem] text-slate-500 mb-1">
               {t("run_options.code_label")}
             </label>
             <input
@@ -182,7 +182,7 @@ function KindColumn({
             />
           </div>
           <div>
-            <label className="block text-[11px] text-slate-500 mb-1">
+            <label className="block text-[0.6875rem] text-slate-500 mb-1">
               {t("run_options.label_label")}
             </label>
             <input

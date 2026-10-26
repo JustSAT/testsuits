@@ -325,7 +325,7 @@ function JiraLinkSection() {
         <div className="flex items-center justify-between gap-3 p-3 rounded border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-900/20">
           <div className="min-w-0">
             <div className="text-sm font-medium">{user?.jiraDisplayName}</div>
-            <div className="text-[11px] text-slate-500 font-mono truncate">{user?.jiraAccountId}</div>
+            <div className="text-[0.6875rem] text-slate-500 font-mono truncate">{user?.jiraAccountId}</div>
           </div>
           <Button
             size="sm"

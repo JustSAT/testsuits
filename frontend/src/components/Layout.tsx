@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, FolderKanban, PlayCircle, Grid3x3, Users,
@@ -7,6 +8,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../lib/auth";
+import { api } from "../lib/api";
 import { SUPPORTED_LANGUAGES } from "../i18n";
 import { logger } from "../lib/logger";
 import { Logo } from "./Logo";
@@ -52,6 +54,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const isManager = user?.role === "MANAGER" || user?.role === "ADMIN";
   const isAdmin = user?.role === "ADMIN";
+
+  // Projects listed under "Projects" in the sidebar, Qase style.
+  const { data: projects = [] } = useQuery<{ id: string; key: string; name: string }[]>({
+    queryKey: ["projects"],
+    queryFn: async () => (await api.get("/projects")).data,
+    enabled: !!user,
+  });
+  const activeProjectId = location.pathname.match(/^\/projects\/([^/]+)/)?.[1] ?? null;
 
   const nav = [
     { to: "/", icon: LayoutDashboard, label: t("nav.dashboard") },
@@ -168,7 +178,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {companyInitials}
             </div>
             <div className={clsx("min-w-0 flex-1", collapsed && "md:hidden")}>
-              <div className="text-[10px] uppercase tracking-wide text-slate-500">{t("nav.company")}</div>
+              <div className="text-[0.625rem] uppercase tracking-wide text-slate-500">{t("nav.company")}</div>
               <div className="text-sm font-semibold truncate">{user.company.name}</div>
             </div>
           </div>
@@ -176,10 +186,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
           {nav.map(({ to, icon: Icon, label }) => (
+            <Fragment key={to}>
             <NavLink
-              key={to}
               to={to}
-              end={to === "/"}
+              end={to === "/" || to === "/projects"}
               title={collapsed ? label : undefined}
               className={({ isActive }) =>
                 clsx(
@@ -194,10 +204,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Icon size={18} />
               <span className={clsx("truncate", collapsed && "md:hidden")}>{label}</span>
             </NavLink>
+            {to === "/projects" && projects.length > 0 && (
+              <div className={clsx("ml-5 border-l border-slate-200 pl-2 dark:border-slate-700 space-y-0.5", collapsed && "md:hidden")}>
+                {projects.map((p) => (
+                  <Link
+                    key={p.id}
+                    to={`/projects/${p.id}`}
+                    title={p.name}
+                    className={clsx(
+                      "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition",
+                      p.id === activeProjectId
+                        ? "bg-brand-50 font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
+                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800",
+                    )}
+                  >
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-slate-200 text-[0.625rem] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
+                      {p.key.slice(0, 2)}
+                    </span>
+                    <span className="truncate">{p.name}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+            </Fragment>
           ))}
 
           {adminNav.length > 0 && (
-            <div className={clsx("text-[10px] uppercase tracking-wide text-slate-400 mt-4 mb-1 px-3", collapsed && "md:hidden")}>
+            <div className={clsx("text-[0.625rem] uppercase tracking-wide text-slate-400 mt-4 mb-1 px-3", collapsed && "md:hidden")}>
               {t("nav.admin")}
             </div>
           )}
@@ -247,7 +280,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           )}
 
           <div className={clsx("px-2", collapsed && "md:hidden")}>
-            <div className="text-[10px] uppercase tracking-wide text-slate-400">{t("nav.signed_in_as")}</div>
+            <div className="text-[0.625rem] uppercase tracking-wide text-slate-400">{t("nav.signed_in_as")}</div>
             <Link to="/profile" className="block text-sm font-medium mt-0.5 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               <div className="flex items-center gap-2">
                 <UserAvatar userId={user?.id ?? ""} name={user?.name ?? ""} hasAvatar={user?.hasAvatar} size="w-6 h-6 text-xs" />
@@ -282,7 +315,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
       <main className="flex-1 overflow-auto">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">{children}</div>
+        <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">{children}</div>
       </main>
     </div>
   );

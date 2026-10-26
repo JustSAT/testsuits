@@ -196,7 +196,7 @@ export function ProjectDetail() {
           </Link>
           <h1 className="flex flex-wrap items-baseline gap-2 text-2xl font-bold">
             {t("repository.title", { name: project.name })}
-            <span className="text-xs font-normal text-slate-500">
+            <span className="text-sm font-normal text-slate-500">
               {t("repository.counts", { cases: full.cases.length, suites: full.byId.size })}
             </span>
           </h1>
@@ -222,10 +222,10 @@ export function ProjectDetail() {
       />
 
       <div className="flex min-h-[60vh] gap-4">
-        <aside className="w-80 shrink-0 self-start rounded-lg border border-slate-200 p-2 dark:border-slate-800">
+        <aside className="w-[22rem] shrink-0 self-start rounded-lg border border-slate-200 p-3 dark:border-slate-800">
           <div className="flex items-center gap-1.5 px-1 pb-2">
-            <button type="button" onClick={() => openSuite(null)} className="flex flex-1 items-center gap-2 text-left font-semibold">
-              <FolderOpen size={18} className="text-brand-600" /> {t("repository.suites")}
+            <button type="button" onClick={() => openSuite(null)} className="flex flex-1 items-center gap-2 text-left text-lg font-semibold">
+              <FolderOpen size={20} className="text-brand-600" /> {t("repository.suites")}
             </button>
             {isManager && (
               <button type="button" className="rounded p-1 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" title={t("repository.create_suite")} aria-label={t("repository.create_suite")}
@@ -301,7 +301,7 @@ export function ProjectDetail() {
                 <h2 className="text-lg font-semibold">{t("repository.all_cases")}</h2>
               )}
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {active?.cases.map((c) => (
                   <CaseRow key={c.id} c={c} checked={checked.has(`c:${c.id}`)} onCheck={isManager ? () => toggleChecked(`c:${c.id}`) : undefined} />
                 ))}
@@ -389,18 +389,18 @@ function TreeRow({ node, depth, activeId, expanded, onOpen, onToggle }: {
   return (
     <>
       <div
-        className={`flex cursor-pointer items-center gap-1.5 rounded py-1 pr-2 text-sm ${node.id === activeId ? "bg-brand-50 dark:bg-brand-500/15" : "hover:bg-slate-50 dark:hover:bg-slate-800/60"}`}
-        style={{ paddingLeft: 4 + depth * 14 }}
+        className={`flex cursor-pointer items-center gap-2 rounded-md py-1.5 pr-2 text-sm ${node.id === activeId ? "bg-brand-50 dark:bg-brand-500/15" : "hover:bg-slate-50 dark:hover:bg-slate-800/60"}`}
+        style={{ paddingLeft: 4 + depth * 18 }}
         onClick={() => onOpen(node.id)}
       >
         {node.children.length > 0 ? (
           <button type="button" className="text-slate-500" onClick={(e) => { e.stopPropagation(); onToggle(node.id); }} aria-expanded={isOpen}>
-            {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           </button>
         ) : (
-          <span className="w-[14px]" />
+          <span className="w-4" />
         )}
-        <Folder size={15} className="shrink-0 text-slate-400" />
+        <Folder size={17} className="shrink-0 text-slate-400" />
         <span className="flex-1 truncate" title={node.name}>{node.name}</span>
         <span className="text-xs tabular-nums text-slate-500">{node.allCaseIds.length}</span>
       </div>
@@ -420,11 +420,11 @@ function SuiteRow({ node, checked, onCheck, onOpen, menu, menuLabel }: {
   menuLabel: string;
 }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-2 dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 dark:border-slate-800 dark:bg-slate-900">
       {menu ? <ActionMenu items={menu} label={menuLabel} /> : <span className="w-6" />}
       {onCheck && <input type="checkbox" checked={checked} onChange={onCheck} aria-label={node.name} />}
-      <button type="button" onClick={onOpen} className="flex flex-1 items-center gap-2 text-left text-sm font-medium hover:underline">
-        <Folder size={16} className="shrink-0 text-slate-400" />
+      <button type="button" onClick={onOpen} className="flex flex-1 items-center gap-2.5 text-left text-sm font-medium hover:underline">
+        <Folder size={20} className="shrink-0 text-slate-400" />
         <span className="truncate">{node.name}</span>
       </button>
       <span className="text-xs tabular-nums text-slate-500">{node.allCaseIds.length}</span>
@@ -435,9 +435,9 @@ function SuiteRow({ node, checked, onCheck, onOpen, menu, menuLabel }: {
 function CaseRow({ c, path, checked, onCheck }: { c: PickerCase; path?: string; checked: boolean; onCheck?: () => void }) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-start gap-3 rounded-lg px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/60">
+    <div className="flex items-start gap-3 rounded-lg border border-transparent px-3 py-2 hover:border-slate-200 hover:bg-slate-50 dark:hover:border-slate-800 dark:hover:bg-slate-800/60">
       {onCheck && <input type="checkbox" className="mt-1" checked={checked} onChange={onCheck} aria-label={c.title} />}
-      <span className="mt-0.5"><PriorityIcon priority={c.priority} /></span>
+      <span className="mt-0.5"><PriorityIcon priority={c.priority} size={17} /></span>
       <Link to={`/cases/${c.id}`} className="min-w-0 flex-1 text-sm hover:underline">
         {c.title}
         {path && <span className="block truncate text-xs text-slate-500">{path}</span>}
