@@ -86,6 +86,7 @@ export async function createCase(opts: {
   suiteId: string;
   title?: string;
   priority?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  testLevel?: "SMOKE" | "SANITY" | "REGRESSION" | "ADVANCED" | "EXPLORATORY";
   steps?: { action: string; expected: string }[];
 }) {
   return prisma.testCase.create({
@@ -93,6 +94,7 @@ export async function createCase(opts: {
       suiteId: opts.suiteId,
       title: opts.title ?? "Test Case",
       priority: opts.priority ?? "MEDIUM",
+      testLevel: opts.testLevel ?? "REGRESSION",
       steps: (opts.steps ?? [{ action: "do thing", expected: "thing done" }]) as object,
     },
   });

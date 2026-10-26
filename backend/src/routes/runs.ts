@@ -8,6 +8,7 @@ import { logActivity } from "../lib/activity";
 import { dispatchWebhook } from "../lib/webhooks";
 import { logger } from "../lib/logger";
 import { buildCombos } from "../lib/executionResults";
+import { expandSuiteIds } from "../lib/suiteTree";
 
 export const runsRouter = Router();
 
@@ -88,16 +89,38 @@ runsRouter.post("/", requireWrite, async (req: AuthedRequest, res, next) => {
     const project = await prisma.project.findFirst({ where: projectWhere(req.user!, { id: data.projectId }), select: { id: true } });
     if (!project) throw httpError(404, "PROJECT_NOT_FOUND");
 
-    const caseIds = new Set(data.caseIds ?? []);
+    // A picked suite brings every case under it, sub-suites included; picked
+    // cases must belong to this project. The level filter narrows both.
+    const levelFilter = data.testLevels?.length ? { testLevel: { in: data.testLevels } } : {};
+    const caseIds = new Set<string>();
     if (data.suiteIds?.length) {
+      const { ids: suiteIds, unknown } = await expandSuiteIds(project.id, data.suiteIds);
+      if (unknown.length) {
+        req.log.warn({ projectId: project.id, userId: req.user!.id, unknownSuiteIds: unknown }, "run create: suites outside project");
+        throw httpError(400, "RUN_SUITES_NOT_IN_PROJECT");
+      }
       const cases = await prisma.testCase.findMany({
-        where: caseWhere(req.user!, {
-          suiteId: { in: data.suiteIds },
-          ...(data.testLevels?.length ? { testLevel: { in: data.testLevels } } : {}),
-        }),
+        where: caseWhere(req.user!, { suiteId: { in: suiteIds }, ...levelFilter }),
         select: { id: true },
       });
       cases.forEach((c) => caseIds.add(c.id));
+    }
+    if (data.caseIds?.length) {
+      const requested = Array.from(new Set(data.caseIds));
+      const inProject = await prisma.testCase.findMany({
+        where: caseWhere(req.user!, { id: { in: requested }, suite: { projectId: project.id } }),
+        select: { id: true, testLevel: true },
+      });
+      if (inProject.length !== requested.length) {
+        req.log.warn(
+          { projectId: project.id, userId: req.user!.id, requested: requested.length, found: inProject.length },
+          "run create: cases outside project",
+        );
+        throw httpError(400, "RUN_CASES_NOT_IN_PROJECT");
+      }
+      inProject
+        .filter((c) => !data.testLevels?.length || data.testLevels.includes(c.testLevel))
+        .forEach((c) => caseIds.add(c.id));
     }
     if (caseIds.size === 0) throw httpError(400, "RUN_REQUIRES_CASES");
 

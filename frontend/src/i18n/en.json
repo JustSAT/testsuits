@@ -142,7 +142,9 @@
     "IMPORT_SUITE_COLUMN_MISSING": "The \"Test Cases\" sheet has no \"Suite Path\" column. Start from the downloadable template.",
     "IMPORT_CASE_ID_COLUMN_MISSING": "The \"Test Cases\" sheet has no \"Case ID\" column. Start from the downloadable template.",
     "IMPORT_HAS_ERRORS": "The file still has row errors. Fix them, or tick \"import valid rows only\".",
-    "IMPORT_NOTHING_TO_IMPORT": "Nothing to import — every row is a duplicate or invalid."
+    "IMPORT_NOTHING_TO_IMPORT": "Nothing to import — every row is a duplicate or invalid.",
+    "RUN_CASES_NOT_IN_PROJECT": "Some of the selected cases don't belong to this project.",
+    "RUN_SUITES_NOT_IN_PROJECT": "Some of the selected suites don't belong to this project."
   },
   "confirm": {
     "default_title": "Are you sure?",
@@ -236,7 +238,11 @@
     "test_cases": "Test Cases",
     "no_cases": "No test cases in this suite yet.",
     "case_title": "Case title",
-    "priority": "Priority"
+    "priority": "Priority",
+    "cases_total_one": "{{count}} test case",
+    "cases_total_other": "{{count}} test cases",
+    "sub_suites_total_one": "{{count}} sub-suite",
+    "sub_suites_total_other": "{{count}} sub-suites"
   },
   "cases": {
     "clone": "Clone",
@@ -364,7 +370,6 @@
     "environment_placeholder": "dev / test / prod",
     "due_date": "Due date",
     "default_assignee": "Default assignee",
-    "include_suites": "Include suites",
     "empty": "No test runs yet.",
     "executed_of": "{{done}} of {{total}} executed",
     "mark_completed": "Mark completed",
@@ -400,7 +405,7 @@
       "name_required": "Run name is required.",
       "project_required": "Pick a project first.",
       "environment_required": "Environment is required.",
-      "suite_required": "Select at least one suite."
+      "case_required": "Select at least one test case."
     },
     "evidence_uploaded": "Evidence uploaded.",
     "cases_count": "{{count}} cases",
@@ -418,6 +423,27 @@
       "mark_all_passed_hint": "Set every remaining pending row to Passed.",
       "all_passed_saved": "All combinations marked passed.",
       "needs_reason_details": "Add reason and actual result to save this failure."
+    },
+    "include_cases": "Test cases",
+    "picker": {
+      "open": "Select cases",
+      "title": "Select test cases",
+      "selected_of": "{{selected}}/{{total}} cases selected",
+      "selected_count_one": "{{count}} case selected",
+      "selected_count_other": "{{count}} cases selected",
+      "clear": "Clear selection",
+      "search_placeholder": "Search for cases",
+      "select_all": "Select all",
+      "expand": "Expand",
+      "collapse": "Collapse",
+      "expand_all": "Expand all",
+      "collapse_all": "Collapse all",
+      "search_results_one": "{{count}} matching case",
+      "search_results_other": "{{count}} matching cases",
+      "no_matches": "No cases match your search.",
+      "empty_suite": "No test cases in this suite.",
+      "no_cases": "This project has no test cases yet.",
+      "done": "Done"
     }
   },
   "milestones": {

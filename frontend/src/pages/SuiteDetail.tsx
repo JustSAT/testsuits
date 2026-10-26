@@ -185,7 +185,7 @@ export function SuiteDetail() {
                 <FolderTree size={20} className="text-brand-600" />
                 <div className="flex-1">
                   <div className="font-medium">{c.name}</div>
-                  <div className="text-xs text-slate-500">{t("projects.suites_count", { count: c._count.cases })}</div>
+                  <div className="text-xs text-slate-500">{t("suites.cases_total", { count: c.totalCases })}</div>
                 </div>
               </Link>
             ))}

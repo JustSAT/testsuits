@@ -5,6 +5,7 @@ import { AuthedRequest, requireManager } from "../middleware/auth";
 import { httpError } from "../middleware/error";
 import { projectWhere, suiteWhere } from "../middleware/scope";
 import { logger } from "../lib/logger";
+import { suiteCaseTotals } from "../lib/suiteTree";
 
 export const suitesRouter = Router();
 
@@ -39,7 +40,12 @@ suitesRouter.get("/:id", async (req: AuthedRequest, res, next) => {
       },
     });
     if (!suite) throw httpError(404, "SUITE_NOT_FOUND");
-    res.json(suite);
+    const totals = await suiteCaseTotals(suite.projectId);
+    res.json({
+      ...suite,
+      totalCases: totals.get(suite.id) ?? 0,
+      children: suite.children.map((c) => ({ ...c, totalCases: totals.get(c.id) ?? 0 })),
+    });
   } catch (e) {
     next(e);
   }

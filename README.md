@@ -8,6 +8,7 @@ A self-hosted test management platform for manual functional QA. Organise projec
 - **Shared / reusable steps** — a per-project library of named steps; insert one into any case from the step editor.
 - **Rich-text editor** — WYSIWYG (TipTap) with a toolbar (bold, italic, inline code, bullet/numbered lists, links, undo/redo) on the fields where formatting actually helps forensic detail: step action/expected, preconditions, shared-step library entries, and — on execution detail — *Actual result* and *Why it failed*. Stored and rendered as Markdown, so plain-text content round-trips and existing rows stay readable. Link URLs are restricted to `http(s)`/`mailto`/`tel` — `javascript:` and other schemes are blocked at both insert and render time.
 - **Webhooks** — configure outbound HTTP webhooks per project on events (`run.created`, `run.completed`, `run.archived`, `execution.failed`, `execution.passed`, `execution_result.failed`, `execution_result.passed`, `jira.bug_created`). Optional HMAC-SHA256 signing, delivery log, test-fire button.
+- **Case picker for runs** — a new run's cases are picked Qase-style: a suite tree with "selected / total" counts per suite (sub-suites included), the active suite's cases and sub-suites side by side, and a search across every case title. Pick whole suites, a few sub-suites, or single cases.
 - **Kanban run view** — toggle between list and kanban on the Runs page; managers drag cards between columns to change a run's status.
 - **Archive runs** — managers can archive a test run to remove it from the active list. An **Archived** tab on the Runs page shows all archived runs; managers can restore them back to active.
 - **Evidence storage** — upload screenshots, videos and logs against cases or executions.
@@ -323,6 +324,12 @@ Link requirements to cases from **Case → Edit → Linked requirements** (multi
 
 The Coverage Matrix picks up a new dimension: select **Requirement** on the Matrix page and the columns become the project's requirements. Each cell shows the latest non-`PENDING` execution status for the case, limited to the requirements the case is linked to. Cells for unlinked requirements are blank; cells for linked requirements that have never been executed show `UNTESTED`.
 
+## Choosing a run's test cases
+
+On **Runs → New run**, pick the project, then **Select cases**. The picker shows the project's suite tree on the left; each suite's checkbox covers every case under it, sub-suites included, and its `selected/total` count does too. Click a suite to see its own cases and its sub-suites on the right, where single cases or whole sub-suites can be ticked. The search box filters every case title across the project. **Done** keeps the selection; the form shows how many cases are picked. The level filter on the form still applies: with levels ticked, only picked cases of those levels go into the run.
+
+Over the API, `POST /runs` takes `caseIds`, `suiteIds` or both. A suite id brings all cases of that suite and its sub-suites. Ids that are not in the run's project are rejected with `RUN_CASES_NOT_IN_PROJECT` / `RUN_SUITES_NOT_IN_PROJECT`. `GET /projects/:id/case-tree` returns the project's suites (`id`, `parentId`, `name`) and cases (`id`, `suiteId`, `title`, `priority`, `testLevel`) that the picker is built from.
+
 ## Importing test cases from Excel
 
 Managers and admins can bulk-load a project's catalogue from a spreadsheet. Open a project → **Import from Excel** (`/projects/:id/import`).
@@ -479,7 +486,8 @@ backend/
     db.ts              Prisma client
     middleware/        auth, scope (tenant + tester visibility), logging, error
     lib/               s3, jira (discover + md→ADF), logger, activity, webhooks,
-                       excelCases (import template + workbook parser)
+                       excelCases (import template + workbook parser),
+                       suiteTree (sub-suite case totals and expansion)
     routes/            auth, twoFactor, users, companies, projects, suites,
                        cases, milestones, runs, executions, attachments,
                        comments, activity, dashboard, matrix, jira,
@@ -488,10 +496,12 @@ frontend/
   src/
     App.tsx            Router
     i18n/              en.json, fr.json — kept in sync (see CLAUDE.md)
-    lib/               api, auth, status, logger, enums, markdown (safe renderer)
+    lib/               api, auth, status, logger, enums, markdown (safe renderer),
+                       caseTree (run case picker tree + selection)
     components/        Layout (collapsible, company header), Comments,
                        ActivityFeed, LanguageSwitcher, PasswordInput,
-                       CustomFieldsEditor, SharedStepsEditor, WebhooksEditor
+                       CustomFieldsEditor, SharedStepsEditor, WebhooksEditor,
+                       CasePickerModal (choose a run's cases)
     pages/             Login, VerifyEmail, Dashboard, Projects, ProjectDetail,
                        CompanySettings (company Jira creds + templates),
                        ProjectSettings (tabbed: Jira / custom fields /
@@ -567,7 +577,7 @@ All routes live under `/api`. Authentication is required except the public endpo
 | Tokens            | `GET /tokens`, `POST /tokens`, `DELETE /tokens/:id` — all require an interactive (JWT) session                  |
 | Users             | `GET /users`, `GET /users/me`, `POST /users` (mgr), `PATCH/DELETE /users/:id` (mgr), `PATCH /users/:id/lock` (mgr) |
 | Companies         | `GET /companies/current`, `PATCH /companies/current` (mgr)                                                      |
-| Projects          | `GET /projects`, `POST /projects` (mgr), `GET/PATCH/DELETE /projects/:id`, `GET/PUT /projects/:id/custom-fields` (PUT mgr) |
+| Projects          | `GET /projects`, `POST /projects` (mgr), `GET/PATCH/DELETE /projects/:id`, `GET/PUT /projects/:id/custom-fields` (PUT mgr), `GET /projects/:id/case-tree` |
 | Requirements      | `GET /requirements?projectId=…`, `GET /requirements/:id`, `POST /requirements` (mgr), `PATCH/DELETE /requirements/:id` (mgr), `POST/DELETE /requirements/:id/cases[/:caseId]` (mgr) |
 | Shared steps      | `GET /shared-steps?projectId=…`, `POST /shared-steps` (mgr), `PATCH/DELETE /shared-steps/:id` (mgr)              |
 | Webhooks          | `GET /webhooks/events`, `GET /webhooks?projectId=…`, `POST/PATCH/DELETE /webhooks/:id` (mgr), `POST /webhooks/:id/test` (mgr) |

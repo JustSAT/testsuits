@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
-import { Plus, List, LayoutGrid, Archive, RotateCcw } from "lucide-react";
+import { Plus, List, LayoutGrid, Archive, RotateCcw, ListChecks, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -17,6 +17,7 @@ import { Field } from "../components/Field";
 import { useZodForm } from "../lib/useZodForm";
 import { nonEmpty } from "../lib/schemas";
 import { apiErrorMessage } from "../lib/apiError";
+import { CasePickerModal } from "../components/CasePickerModal";
 
 const KANBAN_COLUMNS = ["DRAFT", "IN_PROGRESS", "COMPLETED"] as const;
 
@@ -44,7 +45,8 @@ export function Runs() {
   const confirmDialog = useConfirm();
 
   const [open, setOpen] = useState(false);
-  const [selectedSuiteIds, setSelectedSuiteIds] = useState<string[]>([]);
+  const [selectedCaseIds, setSelectedCaseIds] = useState<string[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [selectedConnectivities, setSelectedConnectivities] = useState<string[]>([]);
   const [selectedLocales, setSelectedLocales] = useState<string[]>([]);
@@ -64,6 +66,11 @@ export function Runs() {
     },
   });
   const projectId = form.watch("projectId");
+
+  // Picked cases belong to one project; switching projects starts over.
+  useEffect(() => {
+    setSelectedCaseIds([]);
+  }, [projectId]);
 
   const runsParams: Record<string, string> = {};
   if (projectIdFilter) runsParams.projectId = projectIdFilter;
@@ -120,7 +127,7 @@ export function Runs() {
         locales: selectedLocales.length ? selectedLocales : undefined,
         testLevels: testLevels.length ? testLevels : undefined,
         dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
-        suiteIds: selectedSuiteIds,
+        caseIds: selectedCaseIds,
         assigneeId: values.assigneeId || null,
       }, { silent: true })).data,
     onSuccess: (run) => {
@@ -143,7 +150,7 @@ export function Runs() {
         description: "",
         assigneeId: !isManager && user?.id ? user.id : "",
       });
-      setSelectedSuiteIds([]);
+      setSelectedCaseIds([]);
       setSelectedPlatforms([]);
       setSelectedConnectivities([]);
       setSelectedLocales([]);
@@ -159,17 +166,13 @@ export function Runs() {
   });
 
   function onValid(values: Values) {
-    if (selectedSuiteIds.length === 0) {
-      setSuiteError(t("runs.validation.suite_required"));
+    if (selectedCaseIds.length === 0) {
+      setSuiteError(t("runs.validation.case_required"));
       return;
     }
     setSuiteError(null);
     setSubmitError(null);
     create.mutate(values);
-  }
-
-  function toggleSuite(sid: string) {
-    setSelectedSuiteIds((prev) => (prev.includes(sid) ? prev.filter((x) => x !== sid) : [...prev, sid]));
   }
 
   function closeForm() {
@@ -183,7 +186,7 @@ export function Runs() {
       description: "",
       assigneeId: !isManager && user?.id ? user.id : "",
     });
-    setSelectedSuiteIds([]);
+    setSelectedCaseIds([]);
     setSelectedPlatforms([]);
     setSelectedConnectivities([]);
     setSelectedLocales([]);
@@ -312,7 +315,7 @@ export function Runs() {
                 className="input"
                 {...form.register("projectId", {
                   onChange: () => {
-                    setSelectedSuiteIds([]);
+                    setSelectedCaseIds([]);
                     form.setValue("milestoneId", "");
                   },
                 })}
@@ -421,25 +424,45 @@ export function Runs() {
           </Field>
           {project && (
             <div className="space-y-1">
-              <label className="label">{t("runs.include_suites")}</label>
+              <label className="label">{t("runs.include_cases")}</label>
               <div
-                className={`space-y-1 max-h-48 overflow-auto border rounded p-2 ${suiteError ? "border-red-400" : "border-slate-200 dark:border-slate-700"}`}
+                className={`flex items-center gap-3 border rounded p-2 ${suiteError ? "border-red-400" : "border-slate-200 dark:border-slate-700"}`}
                 aria-invalid={suiteError ? true : undefined}
                 aria-describedby={suiteError ? "suites-error" : undefined}
               >
-                {project.suites.map((s: { id: string; name: string; _count: { cases: number } }) => (
-                  <label key={s.id} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={selectedSuiteIds.includes(s.id)}
-                      onChange={() => { toggleSuite(s.id); if (suiteError) setSuiteError(null); }}
-                    />
-                    {s.name} <span className="text-xs text-slate-500">({t("projects.suites_count", { count: s._count.cases })})</span>
-                  </label>
-                ))}
+                <button type="button" className="btn-secondary" onClick={() => setPickerOpen(true)}>
+                  <ListChecks size={16} /> {t("runs.picker.open")}
+                </button>
+                <span className="flex-1 text-sm text-slate-600 dark:text-slate-300">
+                  {t("runs.picker.selected_count", { count: selectedCaseIds.length })}
+                </span>
+                {selectedCaseIds.length > 0 && (
+                  <button
+                    type="button"
+                    className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                    aria-label={t("runs.picker.clear")}
+                    title={t("runs.picker.clear")}
+                    onClick={() => setSelectedCaseIds([])}
+                  >
+                    <X size={16} />
+                  </button>
+                )}
               </div>
               {suiteError && <p id="suites-error" role="alert" className="text-xs text-red-600">{suiteError}</p>}
             </div>
+          )}
+          {pickerOpen && projectId && (
+            <CasePickerModal
+              projectId={projectId}
+              initialSelected={selectedCaseIds}
+              onCancel={() => setPickerOpen(false)}
+              onDone={(ids) => {
+                setSelectedCaseIds(ids);
+                setPickerOpen(false);
+                if (ids.length && suiteError) setSuiteError(null);
+                logger.info("run cases picked", { projectId, count: ids.length });
+              }}
+            />
           )}
           {submitError && <div role="alert" className="text-sm text-red-600">{submitError}</div>}
           <div className="flex gap-2 justify-end">

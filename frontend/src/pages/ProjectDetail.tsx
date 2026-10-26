@@ -130,8 +130,8 @@ export function ProjectDetail() {
                 <div className="flex-1">
                   <div className="font-medium">{s.name}</div>
                   <div className="text-xs text-slate-500">
-                    {t("projects.suites_count", { count: s._count.cases })}
-                    {s.children.length > 0 && ` · ${s.children.length} ${t("suites.sub_suites").toLowerCase()}`}
+                    {t("suites.cases_total", { count: s.totalCases })}
+                    {s.children.length > 0 && ` · ${t("suites.sub_suites_total", { count: s.children.length })}`}
                   </div>
                 </div>
               </Link>

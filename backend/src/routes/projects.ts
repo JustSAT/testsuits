@@ -7,6 +7,7 @@ import { httpError } from "../middleware/error";
 import { projectWhere } from "../middleware/scope";
 import { logger } from "../lib/logger";
 import { logActivity } from "../lib/activity";
+import { suiteCaseTotals } from "../lib/suiteTree";
 
 export const projectsRouter = Router();
 
@@ -71,7 +72,35 @@ projectsRouter.get("/:id", async (req: AuthedRequest, res, next) => {
       },
     });
     if (!project) throw httpError(404, "PROJECT_NOT_FOUND");
-    res.json(project);
+    const totals = await suiteCaseTotals(project.id);
+    res.json({ ...project, suites: project.suites.map((s) => ({ ...s, totalCases: totals.get(s.id) ?? 0 })) });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * Every suite and case of a project, flat, for the run case picker. Cases carry
+ * only what the picker shows; the client builds the tree from `parentId`.
+ */
+projectsRouter.get("/:id/case-tree", async (req: AuthedRequest, res, next) => {
+  try {
+    const project = await prisma.project.findFirst({ where: projectWhere(req.user!, { id: req.params.id }), select: { id: true } });
+    if (!project) throw httpError(404, "PROJECT_NOT_FOUND");
+    const [suites, cases] = await Promise.all([
+      prisma.testSuite.findMany({
+        where: { projectId: project.id },
+        select: { id: true, parentId: true, name: true },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.testCase.findMany({
+        where: { suite: { projectId: project.id } },
+        select: { id: true, suiteId: true, title: true, priority: true, testLevel: true },
+        orderBy: { createdAt: "asc" },
+      }),
+    ]);
+    req.log.info({ projectId: project.id, userId: req.user!.id, suites: suites.length, cases: cases.length }, "case tree served");
+    res.json({ suites, cases });
   } catch (e) {
     next(e);
   }

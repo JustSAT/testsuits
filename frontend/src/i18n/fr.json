@@ -142,7 +142,9 @@
     "IMPORT_SUITE_COLUMN_MISSING": "La feuille « Test Cases » n'a pas de colonne « Suite Path ». Partez du modèle téléchargeable.",
     "IMPORT_CASE_ID_COLUMN_MISSING": "La feuille « Test Cases » n'a pas de colonne « Case ID ». Partez du modèle téléchargeable.",
     "IMPORT_HAS_ERRORS": "Le fichier contient encore des lignes en erreur. Corrigez-les ou cochez « importer uniquement les lignes valides ».",
-    "IMPORT_NOTHING_TO_IMPORT": "Rien à importer — toutes les lignes sont des doublons ou sont invalides."
+    "IMPORT_NOTHING_TO_IMPORT": "Rien à importer — toutes les lignes sont des doublons ou sont invalides.",
+    "RUN_CASES_NOT_IN_PROJECT": "Certains cas sélectionnés n'appartiennent pas à ce projet.",
+    "RUN_SUITES_NOT_IN_PROJECT": "Certaines suites sélectionnées n'appartiennent pas à ce projet."
   },
   "confirm": {
     "default_title": "Êtes-vous sûr ?",
@@ -255,7 +257,11 @@
     "test_cases": "Cas de test",
     "no_cases": "Aucun cas de test dans cette suite.",
     "case_title": "Titre du cas",
-    "priority": "Priorité"
+    "priority": "Priorité",
+    "cases_total_one": "{{count}} cas de test",
+    "cases_total_other": "{{count}} cas de test",
+    "sub_suites_total_one": "{{count}} sous-suite",
+    "sub_suites_total_other": "{{count}} sous-suites"
   },
   "cases": {
     "clone": "Cloner",
@@ -383,7 +389,6 @@
     "environment_placeholder": "dev / test / prod",
     "due_date": "Échéance",
     "default_assignee": "Assigné par défaut",
-    "include_suites": "Inclure les suites",
     "empty": "Aucune exécution.",
     "executed_of": "{{done}} sur {{total}} exécutés",
     "mark_completed": "Marquer comme terminé",
@@ -419,7 +424,7 @@
       "name_required": "Le nom de l'exécution est requis.",
       "project_required": "Sélectionnez d'abord un projet.",
       "environment_required": "L'environnement est requis.",
-      "suite_required": "Sélectionnez au moins une suite."
+      "case_required": "Sélectionnez au moins un cas de test."
     },
     "evidence_uploaded": "Pièce jointe téléversée.",
     "cases_count": "{{count}} cas",
@@ -437,6 +442,27 @@
       "mark_all_passed_hint": "Passer toutes les lignes restantes à « Réussi ».",
       "all_passed_saved": "Toutes les combinaisons marquées réussies.",
       "needs_reason_details": "Ajoutez la raison et le résultat réel pour enregistrer cet échec."
+    },
+    "include_cases": "Cas de test",
+    "picker": {
+      "open": "Choisir les cas",
+      "title": "Sélectionner les cas de test",
+      "selected_of": "{{selected}}/{{total}} cas sélectionnés",
+      "selected_count_one": "{{count}} cas sélectionné",
+      "selected_count_other": "{{count}} cas sélectionnés",
+      "clear": "Effacer la sélection",
+      "search_placeholder": "Rechercher des cas",
+      "select_all": "Tout sélectionner",
+      "expand": "Déplier",
+      "collapse": "Replier",
+      "expand_all": "Tout déplier",
+      "collapse_all": "Tout replier",
+      "search_results_one": "{{count}} cas correspondant",
+      "search_results_other": "{{count}} cas correspondants",
+      "no_matches": "Aucun cas ne correspond à votre recherche.",
+      "empty_suite": "Aucun cas de test dans cette suite.",
+      "no_cases": "Ce projet n'a pas encore de cas de test.",
+      "done": "Terminé"
     }
   },
   "milestones": {
