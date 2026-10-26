@@ -80,7 +80,7 @@ services:
       JIRA_TOKEN: ${JIRA_TOKEN:-}
       JIRA_PROJECT_KEY: ${JIRA_PROJECT_KEY:-HAP}
       SMTP_URL: ${SMTP_URL:-smtp://mailpit:1025}
-      MAIL_FROM: ${MAIL_FROM:-TestSuits <no-reply@testsuits.local>}
+      MAIL_FROM: ${MAIL_FROM:-SuitesGlobal <no-reply@suitesglobal.local>}
       APP_URL: ${APP_URL:-http://localhost:5173}
       GMAIL_USER: ${GMAIL_USER:-}
       GMAIL_PASSWORD: ${GMAIL_PASSWORD:-}

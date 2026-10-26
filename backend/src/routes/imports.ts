@@ -250,7 +250,7 @@ importsRouter.get("/cases/template.xlsx", requireManager, async (req: AuthedRequ
     const buffer = await buildCaseTemplate();
     req.log.info({ userId: req.user!.id, bytes: buffer.length }, "case import template downloaded");
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    res.setHeader("Content-Disposition", 'attachment; filename="testsuits-case-import-template.xlsx"');
+    res.setHeader("Content-Disposition", 'attachment; filename="suitesglobal-case-import-template.xlsx"');
     res.setHeader("Content-Length", String(buffer.length));
     res.end(buffer);
   } catch (e) {

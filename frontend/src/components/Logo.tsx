@@ -10,11 +10,11 @@ type Props = {
 };
 
 // Optional deployment theme (VITE_THEME_URL) supplies its own mark, in a
-// light and a dark variant, in place of the TestSuits icon.
+// light and a dark variant, in place of the SuitesGlobal icon.
 const themeUrl = (import.meta.env.VITE_THEME_URL as string | undefined)?.replace(/\/$/, "");
 
 /**
- * TestSuits mark — a stacked card with a checkmark. The back card hints at
+ * SuitesGlobal mark — a stacked card with a checkmark. The back card hints at
  * multiple suites; the foreground tile carries the verification tick. Colors
  * are pinned to the `brand` palette in tailwind.config.js so the icon stays
  * in sync with the rest of the UI.

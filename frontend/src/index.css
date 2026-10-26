@@ -4,7 +4,7 @@
 
 /* Palette and font tokens behind tailwind.config.js `brand` / `slate`, as
    "R G B" triplets so opacity modifiers keep working. A deployment theme
-   (VITE_THEME_URL) overrides them; these defaults are the stock TestSuits look. */
+   (VITE_THEME_URL) overrides them; these defaults are the stock SuitesGlobal look. */
 :root {
   --brand-50: 238 244 255;
   --brand-100: 219 230 255;

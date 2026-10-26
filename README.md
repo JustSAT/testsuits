@@ -1,4 +1,4 @@
-# TestSuits — Modern Test Management System
+# SuitesGlobal — Modern Test Management System
 
 A self-hosted test management platform for manual functional QA. Organise projects, run test suites, track executions, link defects to Jira, and store evidence in MinIO — a lightweight, Docker-Compose alternative to TestRail / Zephyr / qTest.
 
@@ -110,7 +110,7 @@ All runtime configuration is controlled by `.env`. Copy `.env.example` and tweak
 | `WEB_PORT`         | Port the Vite dev server listens on                       |
 | `VITE_API_URL`     | URL the **browser** uses to reach the API                 |
 | `VITE_DEFAULT_LANGUAGE` | Optional UI language for first-time visitors (`en` or `fr`, baked in at build time). Empty = follow the browser language. A language picked in the switcher is always remembered. |
-| `VITE_THEME_URL`   | Optional base URL of a deployment theme (e.g. `/theme`, baked in at build time). Empty = stock TestSuits look. See *Theming a deployment*. |
+| `VITE_THEME_URL`   | Optional base URL of a deployment theme (e.g. `/theme`, baked in at build time). Empty = stock SuitesGlobal look. See *Theming a deployment*. |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated list of origins allowed to call the API. Leave empty in dev for auto-reflect. **Required in production** — an empty list denies all cross-origin requests. |
 | `TRUST_PROXY`      | Number of reverse-proxy hops to trust for `X-Forwarded-For` (e.g. `1` behind a single LB). Without this, per-IP rate limits collapse every request onto the proxy IP. |
 
@@ -165,7 +165,7 @@ Outgoing email (password reset, team invites) is sent via SMTP, or through Micro
 | Variable            | Default                                      | Purpose                                                      |
 | ------------------- | -------------------------------------------- | ------------------------------------------------------------ |
 | `SMTP_URL`          | `smtp://mailpit:1025`                        | SMTP connection string. Unset = log the body, don't send     |
-| `MAIL_FROM`         | `TestSuits <no-reply@testsuits.local>`       | From header on every message                                 |
+| `MAIL_FROM`         | `SuitesGlobal <no-reply@suitesglobal.local>`       | From header on every message                                 |
 | `APP_URL`           | `http://localhost:5173`                      | Base URL used to build links (reset, invite) in email bodies |
 | `MAILPIT_SMTP_PORT` | `1025`                                       | Host-side SMTP port for Mailpit                              |
 | `GRAPH_TENANT_ID`, `GRAPH_CLIENT_ID`, `GRAPH_CLIENT_SECRET` | — | Entra app (client credentials) allowed to send as `GRAPH_SENDER` |
@@ -374,7 +374,7 @@ Executing a run shows the same steps, substeps, input data and parameter table.
 
 In the repository's **⋮** menu, **Import from Qase (JSON)** takes the file Qase's *Export → JSON* produces. Choosing it runs a preview (`POST /imports/qase/preview`, writes nothing) with the suites and cases to create, update or leave as they are; **Import** applies it in one transaction. Mapping:
 
-| Qase | TestSuits |
+| Qase | SuitesGlobal |
 | ---- | --------- |
 | suite (title, description, nesting) | suite |
 | title, description, preconditions, postconditions | same fields |

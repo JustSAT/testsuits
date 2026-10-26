@@ -1,8 +1,8 @@
 /**
  * Qase JSON import/export. Pure: converts a Qase repository export (the file
  * Qase's "Export → JSON" produces, suites nested with their cases) into a plan
- * of suites and cases in TestSuits terms, and builds the same shape back from
- * TestSuits data. Persistence lives in lib/qaseImport.ts.
+ * of suites and cases in SuitesGlobal terms, and builds the same shape back from
+ * SuitesGlobal data. Persistence lives in lib/qaseImport.ts.
  *
  * Mapping, kept identical to how earlier DM data was converted:
  * - priority → priority (Qase has no "critical": CRITICAL exports as "high");
@@ -10,7 +10,7 @@
  *   "severity:major", "type:functional", … ("Not set" values and the default
  *   type "other" are skipped);
  * - params → parameters, steps → steps with substeps and input data;
- * - a step with no expected result gets "—" (TestSuits requires one), which
+ * - a step with no expected result gets "—" (SuitesGlobal requires one), which
  *   exports back as empty.
  */
 
@@ -56,7 +56,7 @@ const idOf = (v: unknown): string => {
   throw new QaseFormatError();
 };
 
-/** Qase text: Markdown with the odd <br/> and <span>; TestSuits stores Markdown. */
+/** Qase text: Markdown with the odd <br/> and <span>; SuitesGlobal stores Markdown. */
 function text(v: unknown): string | null {
   if (typeof v !== "string") return null;
   const s = v.replace(/<br\s*\/?>/gi, "\n").replace(/<\/?span[^>]*>/gi, "").replace(/\r\n/g, "\n").trim();

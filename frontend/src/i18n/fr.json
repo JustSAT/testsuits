@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "TestSuits",
+    "name": "SuitesGlobal",
     "tagline": "Gestion moderne des tests pour les suites manuelles."
   },
   "common": {
@@ -524,7 +524,7 @@
     "company_level_hint": "Les identifiants et les modèles sont partagés par tous les projets de l'entreprise. Chaque projet choisit ensuite le projet Jira et l'épopée dans lesquels créer les bugs.",
     "default_issue_type": "Type de ticket par défaut",
     "default_issue_type_help": "Utilisé pour les projets qui n'en définissent pas. Généralement « Bug ».",
-    "project_binding_hint": "Choisissez le projet Jira dans lequel ce projet TestSuits créera les bugs, et éventuellement l'épopée parente.",
+    "project_binding_hint": "Choisissez le projet Jira dans lequel ce projet SuitesGlobal créera les bugs, et éventuellement l'épopée parente.",
     "need_company_config": "Les identifiants Jira ne sont pas encore définis pour l'entreprise. Configurez-les dans",
     "cannot_discover": "Les identifiants Jira de l'entreprise sont manquants ou désactivés.",
     "bug_created": "Bug Jira créé.",
@@ -532,7 +532,7 @@
     "unlinked": "Ticket Jira délié.",
     "unlinked_key": "{{key}} délié. Collez-le dans le champ de lien pour le restaurer.",
     "unlink_confirm": "Délier {{key}} ?",
-    "unlink_confirm_body": "Cela supprime uniquement le lien dans TestSuits — le ticket Jira reste en place. Vous pouvez coller la clé dans le champ de lien pour le restaurer.",
+    "unlink_confirm_body": "Cela supprime uniquement le lien dans SuitesGlobal — le ticket Jira reste en place. Vous pouvez coller la clé dans le champ de lien pour le restaurer.",
     "config_removed": "Configuration Jira supprimée.",
     "clear_binding": "Effacer le lien",
     "use_company_default": "Utiliser le défaut de l'entreprise ({{type}})"
@@ -587,7 +587,7 @@
     "url_placeholder": "https://example.com/hook",
     "secret_optional": "Clé de signature (optionnel)",
     "secret_placeholder": "Laisser vide pour des livraisons non signées",
-    "secret_help": "Si définie, TestSuits signe le corps avec HMAC-SHA256 et l'envoie dans l'en-tête x-testsuits-signature.",
+    "secret_help": "Si définie, SuitesGlobal signe le corps avec HMAC-SHA256 et l'envoie dans l'en-tête x-testsuits-signature.",
     "events": "Événements",
     "empty": "Aucun webhook configuré.",
     "active": "Actif",

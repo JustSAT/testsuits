@@ -63,7 +63,7 @@ describe("parseQaseExport", () => {
     });
   });
 
-  it("keeps Qase attributes TestSuits has no field for as prefixed tags", () => {
+  it("keeps Qase attributes SuitesGlobal has no field for as prefixed tags", () => {
     expect(plan.cases[0].tags).toEqual([
       "features:dope", "severity:major", "type:functional", "layer:e2e", "platform:any",
     ]);
@@ -122,7 +122,7 @@ describe("buildQaseExport", () => {
     ]);
   });
 
-  it("gives suites and cases made in TestSuits fresh numeric ids", () => {
+  it("gives suites and cases made in SuitesGlobal fresh numeric ids", () => {
     const built = buildQaseExport(
       [{ id: "s1", parentId: null, name: "New", description: null, externalRef: null }],
       [{ id: "c1", suiteId: "s1", externalRef: null, title: "T", description: null, preconditions: null, postconditions: null, priority: "CRITICAL", testLevel: "SMOKE", tags: [], parameters: [], steps: [] }],

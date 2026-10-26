@@ -166,7 +166,7 @@ const INSTRUCTIONS: Array<[string, string]> = [
 /** Build the standard, fill-in-me workbook and return it as an xlsx buffer. */
 export async function buildCaseTemplate(): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
-  wb.creator = "TestSuits";
+  wb.creator = "SuitesGlobal";
   // No Date.now() — a fixed timestamp keeps the generated file byte-stable,
   // which makes it cacheable and its tests deterministic.
   wb.created = new Date(0);

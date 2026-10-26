@@ -9,7 +9,7 @@ type AdfDoc = { type: "doc"; version: 1; content: AdfNode[] };
 export const DEFAULT_SUMMARY_TEMPLATE = "[{{suiteName}}] {{caseTitle}} failed";
 
 export const DEFAULT_DESCRIPTION_TEMPLATE = [
-  "Auto-created from TestSuits run: {{runName}}",
+  "Auto-created from SuitesGlobal run: {{runName}}",
   "Project: {{projectName}} ({{projectKey}})",
   "Suite: {{suiteName}}",
   "Test case: {{caseTitle}}",
@@ -33,7 +33,7 @@ export const DEFAULT_DESCRIPTION_TEMPLATE = [
   "{{actualResult}}",
   "",
   "---",
-  "[View in TestSuits]({{executionUrl}})",
+  "[View in SuitesGlobal]({{executionUrl}})",
 ].join("\n");
 
 function textRuns(raw: string): AdfNode[] {
@@ -321,19 +321,19 @@ export async function createJiraBugForExecution(executionId: string, callerUserI
     data: { jiraIssueKey: data.key, jiraIssueUrl: issueUrl },
   });
 
-  // Create a remote link in Jira back to the TestSuits execution.
+  // Create a remote link in Jira back to the SuitesGlobal execution.
   try {
     await jiraFetch(config, `/rest/api/3/issue/${data.key}/remotelink`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         globalId: `testsuits:execution:${executionId}`,
-        application: { type: "com.testsuits", name: "TestSuits" },
+        application: { type: "com.testsuits", name: "SuitesGlobal" },
         relationship: "tested by",
         object: {
           url: executionUrl,
           title: `${execution.case.title} — ${execution.run.name}`,
-          icon: { url16x16: `${appUrl}/favicon.svg`, title: "TestSuits" },
+          icon: { url16x16: `${appUrl}/favicon.svg`, title: "SuitesGlobal" },
         },
       }),
     });
@@ -496,12 +496,12 @@ export async function createJiraBugForResult(resultId: string, callerUserId?: st
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         globalId: `testsuits:result:${resultId}`,
-        application: { type: "com.testsuits", name: "TestSuits" },
+        application: { type: "com.testsuits", name: "SuitesGlobal" },
         relationship: "tested by",
         object: {
           url: executionUrl,
           title: `${execution.case.title} — ${execution.run.name} (${comboLabel})`,
-          icon: { url16x16: `${appUrl}/favicon.svg`, title: "TestSuits" },
+          icon: { url16x16: `${appUrl}/favicon.svg`, title: "SuitesGlobal" },
         },
       }),
     });

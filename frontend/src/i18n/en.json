@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "TestSuits",
+    "name": "SuitesGlobal",
     "tagline": "Modern test management for manual test suites."
   },
   "common": {
@@ -486,7 +486,7 @@
     "remove": "Remove",
     "remove_confirm": "Remove Jira config?",
     "connected_as": "Connected as {{name}} ({{email}})",
-    "settings_subtitle": "Configure how TestSuits files bugs in Jira for this project.",
+    "settings_subtitle": "Configure how SuitesGlobal files bugs in Jira for this project.",
     "credentials": "Credentials",
     "target_project": "Target Jira project",
     "jira_project": "Jira project",
@@ -505,7 +505,7 @@
     "company_level_hint": "Credentials and bug templates are shared by every project in this company. Each project then picks which Jira project and optional epic it files bugs into.",
     "default_issue_type": "Default issue type",
     "default_issue_type_help": "Used for projects that don't set their own. Usually \"Bug\".",
-    "project_binding_hint": "Choose which Jira project this TestSuits project files bugs into, and optionally which epic those bugs should roll up under.",
+    "project_binding_hint": "Choose which Jira project this SuitesGlobal project files bugs into, and optionally which epic those bugs should roll up under.",
     "need_company_config": "Jira credentials aren't set yet for this company. Configure them in",
     "cannot_discover": "Company Jira credentials are missing or disabled.",
     "bug_created": "Jira bug created.",
@@ -513,7 +513,7 @@
     "unlinked": "Jira issue unlinked.",
     "unlinked_key": "Unlinked {{key}}. Paste it in the link box to restore.",
     "unlink_confirm": "Unlink {{key}}?",
-    "unlink_confirm_body": "This only removes the link from TestSuits — the Jira ticket stays. You can paste the key in the link box to restore.",
+    "unlink_confirm_body": "This only removes the link from SuitesGlobal — the Jira ticket stays. You can paste the key in the link box to restore.",
     "config_removed": "Jira configuration removed.",
     "clear_binding": "Clear binding",
     "use_company_default": "Use company default ({{type}})"
@@ -568,7 +568,7 @@
     "url_placeholder": "https://example.com/hook",
     "secret_optional": "Signing secret (optional)",
     "secret_placeholder": "Leave blank for unsigned deliveries",
-    "secret_help": "If set, TestSuits signs the request body with HMAC-SHA256 and sends it as the x-testsuits-signature header.",
+    "secret_help": "If set, SuitesGlobal signs the request body with HMAC-SHA256 and sends it as the x-testsuits-signature header.",
     "events": "Events",
     "empty": "No webhooks configured.",
     "active": "Active",

@@ -6,7 +6,7 @@ const gmailPassword = process.env.GMAIL_PASSWORD?.trim();
 const smtpUrl = process.env.SMTP_URL;
 const from =
   process.env.MAIL_FROM ??
-  (gmailUser ? `TestSuits <${gmailUser}>` : "TestSuits <no-reply@testsuits.local>");
+  (gmailUser ? `SuitesGlobal <${gmailUser}>` : "SuitesGlobal <no-reply@suitesglobal.local>");
 export const appUrl = process.env.APP_URL ?? "http://localhost:5173";
 
 // Microsoft Graph sendMail as one Microsoft 365 mailbox, with an Entra app's

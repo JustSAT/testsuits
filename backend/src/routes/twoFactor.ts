@@ -51,7 +51,7 @@ twoFactorRouter.post("/setup", setupLimiter, async (req: AuthedRequest, res, nex
     if (user.totpEnabledAt) throw httpError(409, "TWO_FA_ALREADY_ENABLED");
 
     const secret = generateSecret();
-    const otpauthUri = generateURI({ issuer: "TestSuits", label: user.email, secret });
+    const otpauthUri = generateURI({ issuer: "SuitesGlobal", label: user.email, secret });
     const qrDataUrl = await QRCode.toDataURL(otpauthUri);
 
     // Store the secret temporarily so confirm-setup can verify a code against it.

@@ -93,7 +93,7 @@ async function createAndSendVerification(user: { id: string; email: string; name
   logger.info({ userId: user.id }, "email verification token issued");
   await sendEmail({
     to: user.email,
-    subject: "Verify your TestSuits email",
+    subject: "Verify your SuitesGlobal email",
     text: `Hi ${user.name},\n\nPlease verify your email address by clicking the link below (valid for 24 hours):\n\n${verifyLink}\n\nIf you didn't create this account, you can ignore this email.\n`,
     html: `<p>Hi ${user.name},</p><p>Please verify your email address by clicking the link below (valid for 24 hours):</p><p><a href="${verifyLink}">${verifyLink}</a></p><p>If you didn't create this account, you can ignore this email.</p>`,
   });
@@ -145,7 +145,7 @@ authRouter.post("/login", loginLimiter, async (req, res, next) => {
         // Fire-and-forget — lockout is already applied; don't block the response on email delivery.
         sendEmail({
           to: user.email,
-          subject: "Your TestSuits account has been temporarily locked",
+          subject: "Your SuitesGlobal account has been temporarily locked",
           text: `Hi ${user.name},\n\nWe detected ${MAX_LOGIN_ATTEMPTS} consecutive failed login attempts on your account. As a precaution, your account has been locked for 15 minutes.\n\nIf this wasn't you, we recommend resetting your password:\n${appUrl}/forgot\n\nIf it was you, simply wait 15 minutes and try again.\n`,
           html: `<p>Hi ${user.name},</p><p>We detected <strong>${MAX_LOGIN_ATTEMPTS} consecutive failed login attempts</strong> on your account. As a precaution, your account has been locked for 15 minutes.</p><p>If this wasn't you, we recommend <a href="${appUrl}/forgot">resetting your password</a>.</p><p>If it was you, simply wait 15 minutes and try again.</p>`,
         }).catch((err) => logger.error({ err, userId: user.id }, "failed to send lockout notification email"));
@@ -290,9 +290,9 @@ authRouter.post("/forgot", forgotLimiter, async (req, res, next) => {
       logger.info({ userId: user.id }, "password reset issued");
       await sendEmail({
         to: user.email,
-        subject: "Reset your TestSuits password",
-        text: `Hi ${user.name},\n\nWe received a request to reset your TestSuits password. The link below is valid for 1 hour:\n\n${resetLink}\n\nIf you didn't request this, you can ignore this email.\n`,
-        html: `<p>Hi ${user.name},</p><p>We received a request to reset your TestSuits password. The link below is valid for 1 hour:</p><p><a href="${resetLink}">${resetLink}</a></p><p>If you didn't request this, you can ignore this email.</p>`,
+        subject: "Reset your SuitesGlobal password",
+        text: `Hi ${user.name},\n\nWe received a request to reset your SuitesGlobal password. The link below is valid for 1 hour:\n\n${resetLink}\n\nIf you didn't request this, you can ignore this email.\n`,
+        html: `<p>Hi ${user.name},</p><p>We received a request to reset your SuitesGlobal password. The link below is valid for 1 hour:</p><p><a href="${resetLink}">${resetLink}</a></p><p>If you didn't request this, you can ignore this email.</p>`,
       });
     } else {
       logger.info({ email }, "password reset requested for unknown email (silent)");
@@ -461,9 +461,9 @@ authRouter.post("/invite", inviteLimiter, requireAuth, requireManager, async (re
     logger.info({ inviteId: invite.id, email }, "invite issued");
     await sendEmail({
       to: email,
-      subject: `You've been invited to join TestSuits`,
-      text: `Hi ${name},\n\n${req.user!.email} invited you to join their TestSuits workspace as a ${role}. Accept the invite here (valid for 7 days):\n\n${inviteLink}\n`,
-      html: `<p>Hi ${name},</p><p>${req.user!.email} invited you to join their TestSuits workspace as a <strong>${role}</strong>. Accept the invite here (valid for 7 days):</p><p><a href="${inviteLink}">${inviteLink}</a></p>`,
+      subject: `You've been invited to join SuitesGlobal`,
+      text: `Hi ${name},\n\n${req.user!.email} invited you to join their SuitesGlobal workspace as a ${role}. Accept the invite here (valid for 7 days):\n\n${inviteLink}\n`,
+      html: `<p>Hi ${name},</p><p>${req.user!.email} invited you to join their SuitesGlobal workspace as a <strong>${role}</strong>. Accept the invite here (valid for 7 days):</p><p><a href="${inviteLink}">${inviteLink}</a></p>`,
     });
     const leak = process.env.NODE_ENV !== "production" ? { devToken: raw } : {};
     res.status(201).json({ ...invite, ...leak });

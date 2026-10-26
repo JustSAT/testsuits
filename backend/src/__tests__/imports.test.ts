@@ -70,7 +70,7 @@ describe("GET /api/imports/cases/template.xlsx", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("spreadsheetml.sheet");
-    expect(res.headers["content-disposition"]).toContain("testsuits-case-import-template.xlsx");
+    expect(res.headers["content-disposition"]).toContain("suitesglobal-case-import-template.xlsx");
     // xlsx is a zip — check the magic bytes rather than trusting the header.
     expect(res.body.subarray(0, 2).toString()).toBe("PK");
   });

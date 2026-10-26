@@ -79,7 +79,7 @@ export function ImportCases() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "testsuits-case-import-template.xlsx";
+      a.download = "suitesglobal-case-import-template.xlsx";
       a.click();
       URL.revokeObjectURL(url);
       logger.info("case import template downloaded", { projectId: id });
