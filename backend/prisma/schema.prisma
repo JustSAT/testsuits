@@ -323,8 +323,13 @@ model TestSuite {
   children    TestSuite[] @relation("SuiteTree")
   name        String
   description String?
+  // Id of this suite in the tool it was imported from (Qase), so a newer
+  // export updates it instead of duplicating it. Null for suites made here.
+  externalRef String?
   createdAt   DateTime    @default(now())
   cases       TestCase[]
+
+  @@index([projectId, externalRef])
 }
 
 model TestCase {
@@ -332,7 +337,14 @@ model TestCase {
   suiteId           String
   suite             TestSuite          @relation(fields: [suiteId], references: [id], onDelete: Cascade)
   title             String
+  // Id of this case in the tool it was imported from (Qase); see TestSuite.
+  externalRef       String?
+  description       String?
   preconditions     String?
+  postconditions    String?
+  // Parameter groups, Qase style: [{ title, values: string[] }]; the n-th
+  // value of every parameter forms one row.
+  parameters        Json               @default("[]")
   priority          Priority           @default(MEDIUM)
   testLevel         TestLevel          @default(REGRESSION)
   tags              String[]           @default([])
@@ -358,7 +370,10 @@ model TestCaseRevision {
   case              TestCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
   version           Int
   title             String
+  description       String?
   preconditions     String?
+  postconditions    String?
+  parameters        Json      @default("[]")
   priority          Priority
   testLevel         TestLevel
   tags              String[]

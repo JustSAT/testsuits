@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { ChangeEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ParameterTable, StepsView } from "../components/case/StepsView";
 import { Upload, Download, Trash2, ExternalLink, Bug, FileDown, Link as LinkIcon, Archive, RotateCcw, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
@@ -351,17 +352,22 @@ export function RunDetail() {
                     <p className="text-sm text-slate-600 whitespace-pre-wrap">{execution.case.preconditions}</p>
                   </div>
                 )}
+                {(execution.case.parameters ?? []).length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <div className="label">{t("cases.parameters")}</div>
+                    <ParameterTable parameters={execution.case.parameters} />
+                  </div>
+                )}
                 <div className="mt-4 space-y-2">
                   <div className="label">{t("cases.steps")}</div>
-                  <ol className="space-y-2">
-                    {(execution.case.steps as any[]).map((s, i) => (
-                      <li key={i} className="text-sm border-l-2 border-slate-200 dark:border-slate-700 pl-3">
-                        <div><span className="font-semibold">{t("cases.action")}:</span> {s.action}</div>
-                        <div className="text-slate-500"><span className="font-semibold">{t("cases.expected")}:</span> {s.expected}</div>
-                      </li>
-                    ))}
-                  </ol>
+                  <StepsView steps={execution.case.steps} />
                 </div>
+                {execution.case.postconditions && (
+                  <div className="mt-3">
+                    <div className="label">{t("cases.postconditions")}</div>
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap">{execution.case.postconditions}</p>
+                  </div>
+                )}
               </div>
 
               {execution.results && execution.results.length > 0 ? (

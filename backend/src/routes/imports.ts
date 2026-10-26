@@ -15,6 +15,8 @@ import {
   CASES_SHEET,
   SUITE_PATH_SEPARATOR,
 } from "../lib/excelCases";
+import { parseQaseExport, QaseFormatError, type QasePlan } from "../lib/qase";
+import { applyQaseImport, exportQase } from "../lib/qaseImport";
 
 export const importsRouter = Router();
 
@@ -442,7 +444,10 @@ importsRouter.post("/cases", requireManager, uploadSingle("file"), async (req: A
               caseId: current.id,
               version: (last?.version ?? 0) + 1,
               title: current.title,
+              description: current.description,
               preconditions: current.preconditions,
+              postconditions: current.postconditions,
+              parameters: current.parameters as Prisma.InputJsonValue,
               priority: current.priority,
               testLevel: current.testLevel,
               tags: current.tags,
@@ -516,6 +521,69 @@ importsRouter.post("/cases", requireManager, uploadSingle("file"), async (req: A
       suitesCreated: result.suitesCreated,
       issues: plan.issues,
     });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Qase JSON import / export
+// ---------------------------------------------------------------------------
+
+/** Read the uploaded Qase export and the target project, or fail with a machine key. */
+async function prepareQase(req: AuthedRequest): Promise<{ projectId: string; plan: QasePlan }> {
+  const { projectId } = z.object({ projectId: z.string().min(1) }).parse(req.body ?? {});
+  const project = await prisma.project.findFirst({ where: projectWhere(req.user!, { id: projectId }), select: { id: true } });
+  if (!project) throw httpError(404, "PROJECT_NOT_FOUND");
+  const file = req.file;
+  if (!file) throw httpError(400, "NO_FILE_UPLOADED");
+  if (!/\.json$/i.test(file.originalname)) throw httpError(400, "IMPORT_QASE_INVALID");
+  try {
+    return { projectId: project.id, plan: parseQaseExport(JSON.parse(file.buffer.toString("utf8"))) };
+  } catch (e) {
+    if (e instanceof SyntaxError || e instanceof QaseFormatError) {
+      req.log.warn({ projectId: project.id, userId: req.user!.id, filename: file.originalname }, "qase import: not a Qase export");
+      throw httpError(400, "IMPORT_QASE_INVALID");
+    }
+    throw e;
+  }
+}
+
+/** Dry run: what importing this Qase export would create and update. Writes nothing. */
+importsRouter.post("/qase/preview", requireManager, uploadSingle("file"), async (req: AuthedRequest, res, next) => {
+  try {
+    const { projectId, plan } = await prepareQase(req);
+    const summary = await applyQaseImport(projectId, req.user!.id, plan, true);
+    req.log.info({ projectId, userId: req.user!.id, suites: plan.suites.length, cases: plan.cases.length, summary }, "qase import previewed");
+    res.json({ ...summary, suites: plan.suites.length, cases: plan.cases.length });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** Import a Qase export; re-importing a newer export updates in place. */
+importsRouter.post("/qase", requireManager, uploadSingle("file"), async (req: AuthedRequest, res, next) => {
+  try {
+    const { projectId, plan } = await prepareQase(req);
+    const summary = await applyQaseImport(projectId, req.user!.id, plan, false);
+    req.log.info({ projectId, userId: req.user!.id, suites: plan.suites.length, cases: plan.cases.length, summary }, "qase import committed");
+    res.json({ ...summary, suites: plan.suites.length, cases: plan.cases.length });
+  } catch (e) {
+    next(e);
+  }
+});
+
+/** Download the project's suites and cases as a Qase JSON export. */
+importsRouter.get("/qase/export", async (req: AuthedRequest, res, next) => {
+  try {
+    const projectId = z.string().min(1).parse(req.query.projectId);
+    const project = await prisma.project.findFirst({ where: projectWhere(req.user!, { id: projectId }), select: { id: true, key: true } });
+    if (!project) throw httpError(404, "PROJECT_NOT_FOUND");
+    const body = await exportQase(project.id);
+    req.log.info({ projectId, userId: req.user!.id }, "qase export downloaded");
+    const date = new Date().toISOString().slice(0, 10);
+    res.setHeader("Content-Disposition", `attachment; filename="${project.key}-${date}.json"`);
+    res.json(body);
   } catch (e) {
     next(e);
   }

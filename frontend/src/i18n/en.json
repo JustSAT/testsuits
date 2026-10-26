@@ -38,7 +38,8 @@
     "system": "System",
     "unlink": "Unlink",
     "no_results": "No results",
-    "clear_selection": "Clear selection"
+    "clear_selection": "Clear selection",
+    "download": "Download"
   },
   "notfound": {
     "title": "Page not found",
@@ -147,7 +148,9 @@
     "IMPORT_NOTHING_TO_IMPORT": "Nothing to import — every row is a duplicate or invalid.",
     "RUN_CASES_NOT_IN_PROJECT": "Some of the selected cases don't belong to this project.",
     "RUN_SUITES_NOT_IN_PROJECT": "Some of the selected suites don't belong to this project.",
-    "SUITE_INVALID_PARENT": "The parent suite must be another suite of this project, outside the suite being moved."
+    "SUITE_INVALID_PARENT": "The parent suite must be another suite of this project, outside the suite being moved.",
+    "CASE_INVALID_SUITE": "The case can only move to a suite of the same project.",
+    "IMPORT_QASE_INVALID": "This file is not a Qase JSON export."
   },
   "confirm": {
     "default_title": "Are you sure?",
@@ -254,11 +257,9 @@
     "attachments": "Attachments",
     "no_attachments": "No attachments yet.",
     "upload": "Upload",
-    "discussion": "Discussion",
     "delete_confirm": "Delete this case?",
     "shared_library": "Shared library",
     "markdown_hint": "Markdown supported: **bold**, *italic*, `code`, lists, [links](url).",
-    "custom_fields": "Custom fields",
     "linked_shared_step": "Linked to a shared step",
     "shared": "Shared",
     "no_shared_steps": "No shared steps in this project yet.",
@@ -267,14 +268,21 @@
     "validation": {
       "title_required": "Title is required.",
       "step_action_empty": "Step {{step}}: action cannot be empty.",
-      "step_expected_empty": "Step {{step}}: expected result cannot be empty."
+      "step_expected_empty": "Step {{step}}: expected result cannot be empty.",
+      "parameter_name_empty": "Every parameter needs a name.",
+      "substep_action_empty": "Substep {{step}} needs an action."
     },
     "cloned_from": "cloned from: {{title}}",
-    "history": "History",
     "no_revisions": "No prior revisions.",
-    "version": "v{{version}}",
-    "revision_summary": "priority: {{priority}} · {{stepsCount}} step(s) · tags: {{tags}}",
-    "reorder_step": "Reorder step {{step}}"
+    "reorder_step": "Reorder step {{step}}",
+    "postconditions": "Post-conditions",
+    "parameters": "Parameters",
+    "add_parameter": "Parameter",
+    "add_parameter_row": "Row",
+    "parameter_name": "Parameter name",
+    "input_data": "Input data",
+    "substeps": "Substeps",
+    "add_substep": "Add substep"
   },
   "messages": {
     "IMPORT_SUCCESS": "Imported {{created}} new case(s), updated {{updated}}, and created {{suites}} suite(s)."
@@ -946,5 +954,65 @@
     "suite_name_placeholder": "For example: Web Application",
     "suite": "Suite",
     "select_suite": "Select suite…"
+  },
+  "case_panel": {
+    "tabs": {
+      "general": "General",
+      "properties": "Properties",
+      "runs": "Runs",
+      "history": "History",
+      "defects": "Defects",
+      "comments": "Comments"
+    },
+    "not_set": "Not set",
+    "created_on": "Created {{date}}",
+    "updated_on": "updated {{date}}",
+    "no_runs": "No run results yet.",
+    "no_defects": "No defects linked to this case.",
+    "someone": "Someone",
+    "updated_fields_one": "updated {{count}} field:",
+    "updated_fields_other": "updated {{count}} fields:",
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "preconditions": "Pre-conditions",
+      "postconditions": "Post-conditions",
+      "priority": "Priority",
+      "testLevel": "Test level",
+      "tags": "Tags",
+      "parameters": "Parameters",
+      "steps": "Steps",
+      "estimatedMinutes": "Estimate",
+      "requirements": "Requirements"
+    }
+  },
+  "run_status": {
+    "DRAFT": "Draft",
+    "IN_PROGRESS": "In progress",
+    "COMPLETED": "Completed",
+    "ARCHIVED": "Archived"
+  },
+  "qase": {
+    "import_title": "Import from Qase (JSON)",
+    "export": "Export to Qase (JSON)",
+    "import_hint": "Choose a JSON export of a Qase repository. Suites and cases already imported from Qase are updated; nothing is deleted.",
+    "file_counts": "The file holds {{suites}} suites and {{cases}} cases.",
+    "import_button": "Import",
+    "imported": "Qase import done.",
+    "up_to_date": "Everything is already up to date.",
+    "preview": {
+      "suitesCreated": "Suites to create",
+      "suitesUpdated": "Suites to update",
+      "casesCreated": "Test cases to create",
+      "casesUpdated": "Test cases to update",
+      "casesUnchanged": "Test cases unchanged"
+    },
+    "done": {
+      "suitesCreated": "Suites created",
+      "suitesUpdated": "Suites updated",
+      "casesCreated": "Test cases created",
+      "casesUpdated": "Test cases updated",
+      "casesUnchanged": "Test cases unchanged"
+    }
   }
 }

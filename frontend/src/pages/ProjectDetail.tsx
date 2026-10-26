@@ -10,7 +10,9 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   Copy,
+  FileDown,
   FileSpreadsheet,
+  FileUp,
   Flag,
   Folder,
   FolderOpen,
@@ -46,10 +48,13 @@ import { ActionMenu, type ActionMenuItem } from "../components/ui/ActionMenu";
 import { useConfirm } from "../components/ui/ConfirmDialog";
 import { SuiteFormDialog } from "../components/repository/SuiteFormDialog";
 import { CaseCreateDialog } from "../components/repository/CaseCreateDialog";
+import { CasePanel } from "../components/case/CasePanel";
+import { QaseImportDialog, downloadQaseExport } from "../components/repository/QaseImportDialog";
 
 type Dialog =
   | { kind: "suite"; suiteId?: string; parentId?: string }
   | { kind: "case"; suiteId?: string }
+  | { kind: "qase" }
   | null;
 
 /**
@@ -68,6 +73,7 @@ export function ProjectDetail() {
   const isManager = useAuth((s) => s.user?.role === "MANAGER" || s.user?.role === "ADMIN");
 
   const activeId = params.get("suite");
+  const openCaseId = params.get("case");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
@@ -116,6 +122,12 @@ export function ProjectDetail() {
       const node = tree.byId.get(suiteId);
       if (node) setExpanded((prev) => new Set([...prev, ...node.path.map((s) => s.id)]));
     }
+  };
+  const openCase = (caseId: string | null) => {
+    const p = new URLSearchParams(params);
+    if (caseId) p.set("case", caseId);
+    else p.delete("case");
+    setParams(p);
   };
   const toggleChecked = (key: string) =>
     setChecked((prev) => {
@@ -178,9 +190,19 @@ export function ProjectDetail() {
     ...(isManager
       ? [
           { key: "imp", icon: <FileSpreadsheet size={15} />, label: t("import.button"), onSelect: () => navigate(`/projects/${project.id}/import`) },
+          { key: "qase-in", icon: <FileUp size={15} />, label: t("qase.import_title"), onSelect: () => setDialog({ kind: "qase" }) },
           { key: "set", icon: <Settings size={15} />, label: t("projects.settings"), onSelect: () => navigate(`/projects/${project.id}/settings`) },
         ]
       : []),
+    {
+      key: "qase-out",
+      icon: <FileDown size={15} />,
+      label: t("qase.export"),
+      onSelect: () => downloadQaseExport(project.id, project.key).catch((e) => {
+        logger.error("qase export failed", { projectId: project.id, err: String(e) });
+        toast.error(apiErrorMessage(e, t("common.something_went_wrong")));
+      }),
+    },
   ];
 
   const checkedSuites = [...checked].filter((k) => k.startsWith("s:")).map((k) => k.slice(2));
@@ -222,7 +244,7 @@ export function ProjectDetail() {
       />
 
       <div className="flex min-h-[60vh] gap-4">
-        <aside className="w-[22rem] shrink-0 self-start rounded-lg border border-slate-200 p-3 dark:border-slate-800">
+        <aside className={`${openCaseId ? "w-64" : "w-[22rem]"} shrink-0 self-start rounded-lg border border-slate-200 p-3 dark:border-slate-800`}>
           <div className="flex items-center gap-1.5 px-1 pb-2">
             <button type="button" onClick={() => openSuite(null)} className="flex flex-1 items-center gap-2 text-left text-lg font-semibold">
               <FolderOpen size={20} className="text-brand-600" /> {t("repository.suites")}
@@ -272,7 +294,7 @@ export function ProjectDetail() {
               ) : (
                 <div className="space-y-1">
                   {results.map((c) => (
-                    <CaseRow key={c.id} c={c} path={tree.byId.get(c.suiteId)?.path.map((p) => p.name).join(" / ")}
+                    <CaseRow key={c.id} c={c} path={tree.byId.get(c.suiteId)?.path.map((p) => p.name).join(" / ")} selected={c.id === openCaseId} onOpen={() => openCase(c.id)}
                       checked={checked.has(`c:${c.id}`)} onCheck={isManager ? () => toggleChecked(`c:${c.id}`) : undefined} />
                   ))}
                 </div>
@@ -303,7 +325,7 @@ export function ProjectDetail() {
 
               <div className="space-y-1.5">
                 {active?.cases.map((c) => (
-                  <CaseRow key={c.id} c={c} checked={checked.has(`c:${c.id}`)} onCheck={isManager ? () => toggleChecked(`c:${c.id}`) : undefined} />
+                  <CaseRow key={c.id} c={c} selected={c.id === openCaseId} onOpen={() => openCase(c.id)} checked={checked.has(`c:${c.id}`)} onCheck={isManager ? () => toggleChecked(`c:${c.id}`) : undefined} />
                 ))}
                 {rowSuites.map((n) => (
                   <SuiteRow key={n.id} node={n} checked={checked.has(`s:${n.id}`)}
@@ -331,8 +353,23 @@ export function ProjectDetail() {
             </>
           )}
         </section>
+        {openCaseId && (
+          <CasePanel
+            caseId={openCaseId}
+            projectId={project.id}
+            tree={full}
+            isManager={isManager}
+            onClose={() => openCase(null)}
+            onChanged={refresh}
+            onOpenCase={openCase}
+            onDeleted={() => { openCase(null); refresh(); }}
+          />
+        )}
       </div>
 
+      {dialog?.kind === "qase" && (
+        <QaseImportDialog projectId={project.id} onClose={() => setDialog(null)} onImported={refresh} />
+      )}
       {dialog?.kind === "suite" && (
         <SuiteFormDialog
           projectId={project.id}
@@ -432,16 +469,23 @@ function SuiteRow({ node, checked, onCheck, onOpen, menu, menuLabel }: {
   );
 }
 
-function CaseRow({ c, path, checked, onCheck }: { c: PickerCase; path?: string; checked: boolean; onCheck?: () => void }) {
+function CaseRow({ c, path, checked, onCheck, selected, onOpen }: {
+  c: PickerCase;
+  path?: string;
+  checked: boolean;
+  onCheck?: () => void;
+  selected: boolean;
+  onOpen: () => void;
+}) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-transparent px-3 py-2 hover:border-slate-200 hover:bg-slate-50 dark:hover:border-slate-800 dark:hover:bg-slate-800/60">
+    <div className={`flex items-start gap-3 rounded-lg border px-3 py-2 ${selected ? "border-brand-500 bg-brand-50 dark:bg-brand-500/10" : "border-transparent hover:border-slate-200 hover:bg-slate-50 dark:hover:border-slate-800 dark:hover:bg-slate-800/60"}`}>
       {onCheck && <input type="checkbox" className="mt-1" checked={checked} onChange={onCheck} aria-label={c.title} />}
       <span className="mt-0.5"><PriorityIcon priority={c.priority} size={17} /></span>
-      <Link to={`/cases/${c.id}`} className="min-w-0 flex-1 text-sm hover:underline">
+      <button type="button" onClick={onOpen} className="min-w-0 flex-1 text-left text-sm hover:underline">
         {c.title}
         {path && <span className="block truncate text-xs text-slate-500">{path}</span>}
-      </Link>
+      </button>
       <span className="shrink-0 text-xs text-slate-500">{t(`test_level.${c.testLevel}`)}</span>
     </div>
   );

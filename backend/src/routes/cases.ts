@@ -3,16 +3,33 @@ import { z } from "zod";
 import { prisma } from "../db";
 import { AuthedRequest, requireManager } from "../middleware/auth";
 import { httpError } from "../middleware/error";
-import { caseWhere, suiteWhere } from "../middleware/scope";
+import { caseWhere, runWhere, suiteWhere } from "../middleware/scope";
 import { logActivity } from "../lib/activity";
 import { logger } from "../lib/logger";
 
 export const casesRouter = Router();
 
+// A substep is a check inside a step (Qase's "Substeps"); its expected result
+// may be left out.
+const substepSchema = z.object({
+  action: z.string().trim().min(1, "Substep action cannot be empty"),
+  expected: z.string().trim().optional(),
+  data: z.string().optional(),
+});
+
 const stepSchema = z.object({
   action: z.string().trim().min(1, "Step action cannot be empty"),
   expected: z.string().trim().min(1, "Step expected result cannot be empty"),
   sharedStepId: z.string().optional().nullable(),
+  // Input data for the step (Qase's "Data").
+  data: z.string().optional(),
+  substeps: z.array(substepSchema).optional(),
+});
+
+// Parameter groups: the n-th value of every parameter forms one row.
+const parameterSchema = z.object({
+  title: z.string().trim().min(1, "Parameter name cannot be empty"),
+  values: z.array(z.string()),
 });
 
 const customFieldValueSchema = z.record(
@@ -23,7 +40,10 @@ const customFieldValueSchema = z.record(
 const upsertSchema = z.object({
   suiteId: z.string(),
   title: z.string().trim().min(1, "Title is required"),
+  description: z.string().optional().nullable(),
   preconditions: z.string().optional().nullable(),
+  postconditions: z.string().optional().nullable(),
+  parameters: z.array(parameterSchema).optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]),
   testLevel: z.enum(["SMOKE", "SANITY", "REGRESSION", "ADVANCED", "EXPLORATORY"]).optional(),
   tags: z.array(z.string()).optional(),
@@ -42,6 +62,7 @@ casesRouter.post("/", requireManager, async (req: AuthedRequest, res, next) => {
       data: {
         ...data,
         steps: data.steps ?? [],
+        parameters: data.parameters ?? [],
         tags: data.tags ?? [],
         requirements: data.requirements ?? [],
         customFieldValues: data.customFieldValues ?? {},
@@ -85,7 +106,17 @@ casesRouter.patch("/:id", requireManager, async (req: AuthedRequest, res, next) 
   try {
     const current = await prisma.testCase.findFirst({ where: caseWhere(req.user!, { id: req.params.id }) });
     if (!current) throw httpError(404, "CASE_NOT_FOUND");
-    const data = upsertSchema.partial().omit({ suiteId: true }).parse(req.body);
+    const data = upsertSchema.partial().parse(req.body);
+    if (data.suiteId && data.suiteId !== current.suiteId) {
+      const [from, to] = await Promise.all([
+        prisma.testSuite.findUnique({ where: { id: current.suiteId }, select: { projectId: true } }),
+        prisma.testSuite.findFirst({ where: suiteWhere(req.user!, { id: data.suiteId }), select: { projectId: true } }),
+      ]);
+      if (!to || to.projectId !== from?.projectId) {
+        req.log.warn({ caseId: current.id, suiteId: data.suiteId, userId: req.user!.id }, "case move: suite outside project");
+        throw httpError(400, "CASE_INVALID_SUITE");
+      }
+    }
 
     // Snapshot current state into history before overwriting.
     const last = await prisma.testCaseRevision.findFirst({
@@ -98,7 +129,10 @@ casesRouter.patch("/:id", requireManager, async (req: AuthedRequest, res, next) 
         caseId: current.id,
         version: (last?.version ?? 0) + 1,
         title: current.title,
+        description: current.description,
         preconditions: current.preconditions,
+        postconditions: current.postconditions,
+        parameters: current.parameters as any,
         priority: current.priority,
         testLevel: current.testLevel,
         tags: current.tags,
@@ -128,6 +162,36 @@ casesRouter.patch("/:id", requireManager, async (req: AuthedRequest, res, next) 
       payload: { title: testCase.title },
     });
     res.json(testCase);
+  } catch (e) {
+    next(e);
+  }
+});
+
+/**
+ * Every execution of this case across the project's runs, newest run first:
+ * the case panel's Runs and Defects tabs. Testers see the runs they may open.
+ */
+casesRouter.get("/:id/executions", async (req: AuthedRequest, res, next) => {
+  try {
+    const owned = await prisma.testCase.findFirst({ where: caseWhere(req.user!, { id: req.params.id }), select: { id: true } });
+    if (!owned) throw httpError(404, "CASE_NOT_FOUND");
+    const executions = await prisma.testExecution.findMany({
+      where: { caseId: owned.id, run: runWhere(req.user!) },
+      orderBy: { run: { createdAt: "desc" } },
+      take: 200,
+      select: {
+        id: true,
+        status: true,
+        executedAt: true,
+        jiraIssueKey: true,
+        jiraIssueUrl: true,
+        executedBy: { select: { id: true, name: true } },
+        assignee: { select: { id: true, name: true } },
+        run: { select: { id: true, name: true, status: true, environment: true, createdAt: true } },
+        results: { select: { id: true, status: true, platform: true, connectivity: true, locale: true, jiraIssueKey: true, jiraIssueUrl: true } },
+      },
+    });
+    res.json(executions);
   } catch (e) {
     next(e);
   }
@@ -182,7 +246,10 @@ casesRouter.post("/:id/clone", requireManager, async (req: AuthedRequest, res, n
       data: {
         suiteId: target.suiteId ?? source.suiteId,
         title: `${source.title} (copy)`,
+        description: source.description,
         preconditions: source.preconditions,
+        postconditions: source.postconditions,
+        parameters: source.parameters as any,
         priority: source.priority,
         testLevel: source.testLevel,
         tags: source.tags,

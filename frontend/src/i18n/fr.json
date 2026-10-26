@@ -38,7 +38,8 @@
     "system": "Système",
     "unlink": "Délier",
     "no_results": "Aucun résultat",
-    "clear_selection": "Effacer la sélection"
+    "clear_selection": "Effacer la sélection",
+    "download": "Télécharger"
   },
   "notfound": {
     "title": "Page introuvable",
@@ -147,7 +148,9 @@
     "IMPORT_NOTHING_TO_IMPORT": "Rien à importer — toutes les lignes sont des doublons ou sont invalides.",
     "RUN_CASES_NOT_IN_PROJECT": "Certains cas sélectionnés n'appartiennent pas à ce projet.",
     "RUN_SUITES_NOT_IN_PROJECT": "Certaines suites sélectionnées n'appartiennent pas à ce projet.",
-    "SUITE_INVALID_PARENT": "La suite parente doit être une autre suite de ce projet, hors de la suite déplacée."
+    "SUITE_INVALID_PARENT": "La suite parente doit être une autre suite de ce projet, hors de la suite déplacée.",
+    "CASE_INVALID_SUITE": "Le cas ne peut être déplacé que vers une suite du même projet.",
+    "IMPORT_QASE_INVALID": "Ce fichier n'est pas un export JSON Qase."
   },
   "confirm": {
     "default_title": "Êtes-vous sûr ?",
@@ -273,11 +276,9 @@
     "attachments": "Pièces jointes",
     "no_attachments": "Aucune pièce jointe.",
     "upload": "Téléverser",
-    "discussion": "Discussion",
     "delete_confirm": "Supprimer ce cas ?",
     "shared_library": "Bibliothèque partagée",
     "markdown_hint": "Markdown pris en charge : **gras**, *italique*, `code`, listes, [liens](url).",
-    "custom_fields": "Champs personnalisés",
     "linked_shared_step": "Lié à une étape partagée",
     "shared": "Partagée",
     "no_shared_steps": "Aucune étape partagée dans ce projet.",
@@ -286,14 +287,21 @@
     "validation": {
       "title_required": "Le titre est requis.",
       "step_action_empty": "Étape {{step}} : l'action ne peut pas être vide.",
-      "step_expected_empty": "Étape {{step}} : le résultat attendu ne peut pas être vide."
+      "step_expected_empty": "Étape {{step}} : le résultat attendu ne peut pas être vide.",
+      "parameter_name_empty": "Chaque paramètre doit avoir un nom.",
+      "substep_action_empty": "La sous-étape {{step}} doit avoir une action."
     },
     "cloned_from": "cloné de : {{title}}",
-    "history": "Historique",
     "no_revisions": "Aucune révision antérieure.",
-    "version": "v{{version}}",
-    "revision_summary": "priorité : {{priority}} · {{stepsCount}} étape(s) · étiquettes : {{tags}}",
-    "reorder_step": "Réordonner l'étape {{step}}"
+    "reorder_step": "Réordonner l'étape {{step}}",
+    "postconditions": "Postconditions",
+    "parameters": "Paramètres",
+    "add_parameter": "Paramètre",
+    "add_parameter_row": "Ligne",
+    "parameter_name": "Nom du paramètre",
+    "input_data": "Données d'entrée",
+    "substeps": "Sous-étapes",
+    "add_substep": "Ajouter une sous-étape"
   },
   "messages": {
     "IMPORT_SUCCESS": "{{created}} cas créé(s), {{updated}} mis à jour et {{suites}} suite(s) créée(s)."
@@ -946,5 +954,65 @@
     "suite_name_placeholder": "Par exemple : Application web",
     "suite": "Suite",
     "select_suite": "Choisir une suite…"
+  },
+  "case_panel": {
+    "tabs": {
+      "general": "Général",
+      "properties": "Propriétés",
+      "runs": "Exécutions",
+      "history": "Historique",
+      "defects": "Défauts",
+      "comments": "Commentaires"
+    },
+    "not_set": "Non défini",
+    "created_on": "Créé le {{date}}",
+    "updated_on": "modifié le {{date}}",
+    "no_runs": "Aucun résultat d'exécution.",
+    "no_defects": "Aucun défaut lié à ce cas.",
+    "someone": "Quelqu'un",
+    "updated_fields_one": "a modifié {{count}} champ :",
+    "updated_fields_other": "a modifié {{count}} champs :",
+    "fields": {
+      "title": "Titre",
+      "description": "Description",
+      "preconditions": "Préconditions",
+      "postconditions": "Postconditions",
+      "priority": "Priorité",
+      "testLevel": "Niveau de test",
+      "tags": "Tags",
+      "parameters": "Paramètres",
+      "steps": "Étapes",
+      "estimatedMinutes": "Estimation",
+      "requirements": "Exigences"
+    }
+  },
+  "run_status": {
+    "DRAFT": "Brouillon",
+    "IN_PROGRESS": "En cours",
+    "COMPLETED": "Terminée",
+    "ARCHIVED": "Archivée"
+  },
+  "qase": {
+    "import_title": "Importer depuis Qase (JSON)",
+    "export": "Exporter vers Qase (JSON)",
+    "import_hint": "Choisissez un export JSON d'un référentiel Qase. Les suites et cas déjà importés depuis Qase sont mis à jour ; rien n'est supprimé.",
+    "file_counts": "Le fichier contient {{suites}} suites et {{cases}} cas.",
+    "import_button": "Importer",
+    "imported": "Import Qase terminé.",
+    "up_to_date": "Tout est déjà à jour.",
+    "preview": {
+      "suitesCreated": "Suites à créer",
+      "suitesUpdated": "Suites à mettre à jour",
+      "casesCreated": "Cas à créer",
+      "casesUpdated": "Cas à mettre à jour",
+      "casesUnchanged": "Cas inchangés"
+    },
+    "done": {
+      "suitesCreated": "Suites créées",
+      "suitesUpdated": "Suites mises à jour",
+      "casesCreated": "Cas créés",
+      "casesUpdated": "Cas mis à jour",
+      "casesUnchanged": "Cas inchangés"
+    }
   }
 }

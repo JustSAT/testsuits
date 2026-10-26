@@ -105,7 +105,10 @@ suitesRouter.post("/:id/duplicate", requireManager, async (req: AuthedRequest, r
         data: cases.map((c) => ({
           suiteId: newIds.get(c.suiteId)!,
           title: c.title,
+          description: c.description,
           preconditions: c.preconditions,
+          postconditions: c.postconditions,
+          parameters: c.parameters as object,
           priority: c.priority,
           testLevel: c.testLevel,
           tags: c.tags,

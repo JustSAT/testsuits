@@ -9,6 +9,8 @@ A self-hosted test management platform for manual functional QA. Organise projec
 - **Rich-text editor** — WYSIWYG (TipTap) with a toolbar (bold, italic, inline code, bullet/numbered lists, links, undo/redo) on the fields where formatting actually helps forensic detail: step action/expected, preconditions, shared-step library entries, and — on execution detail — *Actual result* and *Why it failed*. Stored and rendered as Markdown, so plain-text content round-trips and existing rows stay readable. Link URLs are restricted to `http(s)`/`mailto`/`tel` — `javascript:` and other schemes are blocked at both insert and render time.
 - **Webhooks** — configure outbound HTTP webhooks per project on events (`run.created`, `run.completed`, `run.archived`, `execution.failed`, `execution.passed`, `execution_result.failed`, `execution_result.passed`, `jira.bug_created`). Optional HMAC-SHA256 signing, delivery log, test-fire button.
 - **Qase-style repository** — every project is listed in the sidebar under **Projects**, and opens as its test repository: the suite tree with case counts (sub-suites included) on the left, the selected suite's cases and sub-suites on the right, search and **Add filter** on top. Every suite has a **⋮** menu to create a test case or sub-suite in it, edit it (name, parent, description), duplicate it with everything under it, or delete it; checkboxes delete several suites and cases at once.
+- **Qase-style case panel** — clicking a case in the repository opens it in a side panel with **General** (description, pre- and post-conditions, parameter groups, steps with substeps and input data, attachments), **Properties** (suite, priority, test level, estimate, tags, requirements, custom fields — saved as you change them), **Runs** (every execution across runs), **History** (field-by-field changes), **Defects** (Jira issues raised from its executions) and **Comments**. Edit, clone and delete sit in the panel header.
+- **Qase JSON import / export** — import a Qase repository export into a project (dry-run preview first) and export a project as Qase JSON. Suites and cases remember their Qase id, so importing a newer export updates them in place, and an export imported back changes nothing.
 - **Qase-style run creation** — **New run** opens a dialog laid out like Qase's (project and name, description, environment and milestone, assignee and due date, platform / connectivity / locale configurations, test cases). Cases are picked in a suite tree with "selected / total" counts per suite (sub-suites included), the active suite's cases and sub-suites side by side, a search across every case title, and **Add filter** by priority, test level or tag. Pick whole suites, a few sub-suites, or single cases.
 - **Kanban run view** — toggle between list and kanban on the Runs page; managers drag cards between columns to change a run's status.
 - **Archive runs** — managers can archive a test run to remove it from the active list. An **Archived** tab on the Runs page shows all archived runs; managers can restore them back to active.
@@ -27,7 +29,7 @@ A self-hosted test management platform for manual functional QA. Organise projec
 - **SCIM 2.0 user provisioning** — working. Issue a per-tenant SCIM token from Company Settings → SSO, point your IdP (Okta, Azure AD, JumpCloud) at `/api/scim/v2`. Groups and role-to-group mapping are not yet supported.
 - **SAML SSO — scaffolding only, not production-ready.** The per-company config UI and routes are in place, but `/saml/:slug/login` returns `501` and `/saml/:slug/acs` deliberately rejects requests until a real assertion parser is wired up (see comments in `backend/src/routes/saml.ts` for the exact steps — install `@node-saml/node-saml` and verify against `cfg.x509Cert`). Do not expose these routes to the public internet as-is.
 - **Audit log** — `/api/audit` surfaces the tenant-wide activity stream with user/action/date filters and CSV export for compliance reviews.
-- **Test case versioning** — every `PATCH /cases/:id` snapshots the prior state to `TestCaseRevision` and `GET /cases/:id/revisions` returns the full audit trail. The case detail page exposes a History panel that lists revisions with author/date/changed-field summary; a per-version field-level diff view is on the roadmap.
+- **Test case versioning** — every `PATCH /cases/:id` snapshots the prior state to `TestCaseRevision` and `GET /cases/:id/revisions` returns the full audit trail. The case panel's **History** tab lists every edit with its author, time and each changed field before → after.
 - **Executive dashboard** — stat tiles, 30-day execution & pass-rate trend, release-readiness per milestone, defect aging buckets, top failing cases.
 - **i18n** — English and French built in with a language switcher; sidebar collapses for more canvas. All API error, warning, and info messages are returned as stable `UPPER_SNAKE_CASE` machine keys (e.g. `INVALID_CREDENTIALS`, `PROJECT_NOT_FOUND`); the frontend translates them via `t('errors.' + key)`. Validation messages, placeholders, and aria-labels are also served from the language files — no hardcoded English in `.tsx` files or API responses.
 - **Dark mode** — light by default. Toggle in the sidebar; the choice is saved in `localStorage` and applied pre-hydration so there's no flash on refresh. Toasts and the TipTap editor follow the theme automatically.
@@ -346,6 +348,34 @@ The picker shows the project's suite tree on the left; each suite's checkbox cov
 
 Over the API, `POST /runs` takes `caseIds`, `suiteIds` or both. A suite id brings all cases of that suite and its sub-suites. Ids that are not in the run's project are rejected with `RUN_CASES_NOT_IN_PROJECT` / `RUN_SUITES_NOT_IN_PROJECT`. `GET /projects/:id/case-tree` returns the project's suites (`id`, `parentId`, `name`, `description`) and cases (`id`, `suiteId`, `title`, `priority`, `testLevel`, `tags`) that the picker is built from.
 
+## Working with a test case
+
+Click a case in the repository to open it in the side panel (the URL keeps `?case=<id>`, so the view can be shared; old `/cases/:id` links land there too). The header shows its title and suite path, with **Edit**, **Clone** and **Delete** for managers.
+
+- **General** — description, pre-conditions, post-conditions, parameter groups (a table: one column per parameter, one row per combination), steps and attachments. Each step has an action, optional input data and an expected result, and can hold substeps (checks inside the step, each with its own action, optional input data and expected result). **Edit** turns this tab into the editor: rich text for the texts, a table editor for parameters, and steps you can drag to reorder, add substeps to, or insert from the shared-step library.
+- **Properties** — suite (moving the case), priority, test level, estimate, tags, free-text requirements, custom fields and linked requirements. Changes save immediately.
+- **Runs** — every execution of the case, newest run first, with its status, environment and who ran it.
+- **History** — each edit with its author, time and every changed field before → after.
+- **Defects** — Jira issues raised or linked on the case's executions.
+- **Comments** — the case's discussion.
+
+Executing a run shows the same steps, substeps, input data and parameter table.
+
+## Importing from and exporting to Qase (JSON)
+
+In the repository's **⋮** menu, **Import from Qase (JSON)** takes the file Qase's *Export → JSON* produces. Choosing it runs a preview (`POST /imports/qase/preview`, writes nothing) with the suites and cases to create, update or leave as they are; **Import** applies it in one transaction. Mapping:
+
+| Qase | TestSuits |
+| ---- | --------- |
+| suite (title, description, nesting) | suite |
+| title, description, preconditions, postconditions | same fields |
+| priority high / medium / low | HIGH / MEDIUM / LOW (a case already Critical stays Critical) |
+| severity, type, behavior, layer, Platform custom field | tags `severity:major`, `type:functional`, `behavior:positive`, `layer:e2e`, `platform:any` (unset values and the default type "other" are skipped) |
+| params | parameters |
+| steps, nested steps, data, expected_result | steps, substeps, input data, expected result (a step without one gets "—") |
+
+Suites and cases keep their Qase id (`externalRef`). Importing a newer export matches by that id, falls back to suite path + title for items that have none yet (made here or imported from Excel), updates what changed (with a revision, so History shows it) and never deletes anything. **Export to Qase (JSON)** downloads the project in the same format; imported items keep their Qase ids, others get new numbers, and tags with the prefixes above go back into their Qase fields. Exporting a project and importing the file again reports everything unchanged.
+
 ## Importing test cases from Excel
 
 Managers and admins can bulk-load a project's catalogue from a spreadsheet. Open a project → **Import from Excel** (`/projects/:id/import`).
@@ -435,8 +465,13 @@ Company
         ├── Webhooks (outbound HTTP on events; HMAC signing + delivery log)
         ├── Milestones
         ├── TestSuites (tree — suites can have sub-suites)
+        │     ├── externalRef (Qase id when imported from Qase)
         │     └── TestCases
-        │           ├── steps (ordered JSON array, drag-to-reorder, Markdown)
+        │           ├── description, preconditions, postconditions (Markdown)
+        │           ├── parameters (JSON: [{ title, values[] }] — row n is the n-th value of each)
+        │           ├── steps (ordered JSON array, drag-to-reorder, Markdown;
+        │           │          each step: action, expected, data?, substeps?[{ action, expected?, data? }])
+        │           ├── externalRef (Qase id when imported from Qase)
         │           ├── customFieldValues (keyed by project's customFields)
         │           ├── tags, priority, testLevel
         │           ├── Attachments
@@ -503,7 +538,8 @@ backend/
     middleware/        auth, scope (tenant + tester visibility), logging, error
     lib/               s3, jira (discover + md→ADF), logger, activity, webhooks,
                        excelCases (import template + workbook parser),
-                       suiteTree (sub-suite case totals and expansion)
+                       suiteTree (sub-suite case totals and expansion),
+                       qase + qaseImport (Qase JSON mapping, import, export)
     routes/            auth, twoFactor, users, companies, projects, suites,
                        cases, milestones, runs, executions, attachments,
                        comments, activity, dashboard, matrix, jira,
@@ -513,13 +549,16 @@ frontend/
     App.tsx            Router
     i18n/              en.json, fr.json — kept in sync (see CLAUDE.md)
     lib/               api, auth, status, logger, enums, markdown (safe renderer),
-                       caseTree (run case picker tree + selection)
+                       caseTree (run case picker tree + selection),
+                       caseModel (case shapes, parameter rows, history diff)
     components/        Layout (collapsible, company header), Comments,
                        ActivityFeed, LanguageSwitcher, PasswordInput,
                        CustomFieldsEditor, SharedStepsEditor, WebhooksEditor,
                        NewRunModal + CasePickerModal (create a run, pick its
                        cases), CaseFilterBar, PriorityIcon, ui/MultiSelect,
-                       ui/ActionMenu, repository/ (suite + case dialogs)
+                       ui/ActionMenu, repository/ (suite, case and Qase import
+                       dialogs), case/ (CasePanel with its tabs, CaseEditor,
+                       StepsView, LinkedRequirements)
     pages/             Login, VerifyEmail, Dashboard, Projects, ProjectDetail
                        (the project's repository: suite tree + cases),
                        CompanySettings (company Jira creds + templates),
@@ -601,8 +640,9 @@ All routes live under `/api`. Authentication is required except the public endpo
 | Shared steps      | `GET /shared-steps?projectId=…`, `POST /shared-steps` (mgr), `PATCH/DELETE /shared-steps/:id` (mgr)              |
 | Webhooks          | `GET /webhooks/events`, `GET /webhooks?projectId=…`, `POST/PATCH/DELETE /webhooks/:id` (mgr), `POST /webhooks/:id/test` (mgr) |
 | Suites            | `POST /suites` (mgr), `GET/PATCH/DELETE /suites/:id` (PATCH/DELETE mgr), `POST /suites/:id/duplicate` (mgr)       |
-| Cases             | `POST /cases` (mgr), `GET /cases/:id`, `PATCH/DELETE /cases/:id` (mgr), `POST /cases/:id/clone` (mgr)            |
+| Cases             | `POST /cases` (mgr), `GET /cases/:id`, `PATCH/DELETE /cases/:id` (mgr; PATCH can move the case to another suite of the project), `POST /cases/:id/clone` (mgr), `GET /cases/:id/revisions`, `GET /cases/:id/executions` |
 | Excel import      | `GET /imports/cases/template.xlsx` (mgr), `POST /imports/cases/preview` (mgr, multipart — dry run), `POST /imports/cases` (mgr, multipart — commit) |
+| Qase JSON         | `POST /imports/qase/preview` (mgr, multipart `projectId` + `file` — dry run), `POST /imports/qase` (mgr, multipart — commit), `GET /imports/qase/export?projectId=` |
 | Milestones        | `GET /milestones`, `POST /milestones` (mgr), `PATCH/DELETE /milestones/:id` (mgr)                                |
 | Runs              | `GET /runs`, `POST /runs` (mgr), `GET/PATCH/DELETE /runs/:id`, `GET /runs/:id/export.csv`                        |
 | Executions        | `GET /executions/:id`, `PATCH /executions/:id` (legacy runs only — per-combo runs must use `/execution-results/*`), `POST /executions/bulk-assign` |
