@@ -8,6 +8,7 @@ A self-hosted test management platform for manual functional QA. Organise projec
 - **Shared / reusable steps** — a per-project library of named steps; insert one into any case from the step editor.
 - **Rich-text editor** — WYSIWYG (TipTap) with a toolbar (bold, italic, inline code, bullet/numbered lists, links, undo/redo) on the fields where formatting actually helps forensic detail: step action/expected, preconditions, shared-step library entries, and — on execution detail — *Actual result* and *Why it failed*. Stored and rendered as Markdown, so plain-text content round-trips and existing rows stay readable. Link URLs are restricted to `http(s)`/`mailto`/`tel` — `javascript:` and other schemes are blocked at both insert and render time.
 - **Webhooks** — configure outbound HTTP webhooks per project on events (`run.created`, `run.completed`, `run.archived`, `execution.failed`, `execution.passed`, `execution_result.failed`, `execution_result.passed`, `jira.bug_created`). Optional HMAC-SHA256 signing, delivery log, test-fire button.
+- **Qase-style repository** — a project opens as its test repository: the suite tree with case counts (sub-suites included) on the left, the selected suite's cases and sub-suites on the right, search and **Add filter** on top. Every suite has a **⋮** menu to create a test case or sub-suite in it, edit it (name, parent, description), duplicate it with everything under it, or delete it; checkboxes delete several suites and cases at once.
 - **Qase-style run creation** — **New run** opens a dialog laid out like Qase's (project and name, description, environment and milestone, assignee and due date, platform / connectivity / locale configurations, test cases). Cases are picked in a suite tree with "selected / total" counts per suite (sub-suites included), the active suite's cases and sub-suites side by side, a search across every case title, and **Add filter** by priority, test level or tag. Pick whole suites, a few sub-suites, or single cases.
 - **Kanban run view** — toggle between list and kanban on the Runs page; managers drag cards between columns to change a run's status.
 - **Archive runs** — managers can archive a test run to remove it from the active list. An **Archived** tab on the Runs page shows all archived runs; managers can restore them back to active.
@@ -324,13 +325,26 @@ Link requirements to cases from **Case → Edit → Linked requirements** (multi
 
 The Coverage Matrix picks up a new dimension: select **Requirement** on the Matrix page and the columns become the project's requirements. Each cell shows the latest non-`PENDING` execution status for the case, limited to the requirements the case is linked to. Cells for unlinked requirements are blank; cells for linked requirements that have never been executed show `UNTESTED`.
 
+## Browsing the repository
+
+Open a project to see its repository. The left pane is the suite tree; each count is every case under that suite, sub-suites included. **Suites** at the top of the tree shows the root suites under **All cases**; clicking a suite opens it on the right with its breadcrumb, description, own cases (priority icon, title, test level) and its sub-suites. Search and **Add filter** (priority, test level, tag) narrow the tree, counts and lists.
+
+Managers get a **⋮** menu on every suite:
+
+- **Create test case** / **Create suite** — a new case or sub-suite inside it. **+ Test case** in the header and **+** next to *Suites* do the same from the top.
+- **Edit** — name, parent suite (or *Project root*) and description. A suite cannot move under itself or one of its sub-suites (`SUITE_INVALID_PARENT`).
+- **Duplicate** — copies the suite next to the original as "… (copy)", with all its sub-suites and cases (`POST /suites/:id/duplicate`). Executions, comments and attachments are not copied.
+- **Delete** — removes the suite, its sub-suites and their cases, including their results in test runs, after a confirmation that says how many suites and cases go. Tick several suites or cases and use **Delete** in the selection bar to remove them together.
+
+The **⋮** in the header leads to the project's test runs, milestones, requirements, Excel import and settings. Old `/suites/:id` links open the repository with that suite selected.
+
 ## Choosing a run's test cases
 
 On **Runs → New run**, a dialog asks for the project and a name (prefilled as `Test run YYYY/MM/DD`), an optional description, the environment, milestone, default assignee and due date, and the **Configurations**: the platforms, connectivities and locales to run on (each case is executed once per combination). Under **Test cases**, **Select cases** opens the picker.
 
 The picker shows the project's suite tree on the left; each suite's checkbox covers every case under it, sub-suites included, and its `selected/total` count does too. Click a suite to see its own cases and its sub-suites on the right, where single cases or whole sub-suites can be ticked; each case shows its priority as an icon. The search box filters every case title across the project, and **Add filter** narrows the list by priority, test level or tag (any chosen value within a field, every field). Search and filters only change what is shown: every ticked case goes into the run, and the header keeps counting against the whole project. **Done** keeps the selection and **Start run** creates the run.
 
-Over the API, `POST /runs` takes `caseIds`, `suiteIds` or both. A suite id brings all cases of that suite and its sub-suites. Ids that are not in the run's project are rejected with `RUN_CASES_NOT_IN_PROJECT` / `RUN_SUITES_NOT_IN_PROJECT`. `GET /projects/:id/case-tree` returns the project's suites (`id`, `parentId`, `name`) and cases (`id`, `suiteId`, `title`, `priority`, `testLevel`, `tags`) that the picker is built from.
+Over the API, `POST /runs` takes `caseIds`, `suiteIds` or both. A suite id brings all cases of that suite and its sub-suites. Ids that are not in the run's project are rejected with `RUN_CASES_NOT_IN_PROJECT` / `RUN_SUITES_NOT_IN_PROJECT`. `GET /projects/:id/case-tree` returns the project's suites (`id`, `parentId`, `name`, `description`) and cases (`id`, `suiteId`, `title`, `priority`, `testLevel`, `tags`) that the picker is built from.
 
 ## Importing test cases from Excel
 
@@ -504,14 +518,16 @@ frontend/
                        ActivityFeed, LanguageSwitcher, PasswordInput,
                        CustomFieldsEditor, SharedStepsEditor, WebhooksEditor,
                        NewRunModal + CasePickerModal (create a run, pick its
-                       cases), PriorityIcon, ui/MultiSelect
-    pages/             Login, VerifyEmail, Dashboard, Projects, ProjectDetail,
+                       cases), CaseFilterBar, PriorityIcon, ui/MultiSelect,
+                       ui/ActionMenu, repository/ (suite + case dialogs)
+    pages/             Login, VerifyEmail, Dashboard, Projects, ProjectDetail
+                       (the project's repository: suite tree + cases),
                        CompanySettings (company Jira creds + templates),
                        ProjectSettings (tabbed: Jira / custom fields /
                        shared steps / webhooks),
                        Team, Milestones, Matrix (coverage by platform /
                        connectivity / locale),
-                       SuiteDetail, CaseDetail (Markdown + shared-step
+                       SuiteDetail (redirects into the repository), CaseDetail (Markdown + shared-step
                        library + custom fields), Runs (list / kanban toggle),
                        RunDetail, Profile (password, 2FA, avatar),
                        ImportCases (Excel bulk import), Tokens, Audit,
@@ -584,7 +600,7 @@ All routes live under `/api`. Authentication is required except the public endpo
 | Requirements      | `GET /requirements?projectId=…`, `GET /requirements/:id`, `POST /requirements` (mgr), `PATCH/DELETE /requirements/:id` (mgr), `POST/DELETE /requirements/:id/cases[/:caseId]` (mgr) |
 | Shared steps      | `GET /shared-steps?projectId=…`, `POST /shared-steps` (mgr), `PATCH/DELETE /shared-steps/:id` (mgr)              |
 | Webhooks          | `GET /webhooks/events`, `GET /webhooks?projectId=…`, `POST/PATCH/DELETE /webhooks/:id` (mgr), `POST /webhooks/:id/test` (mgr) |
-| Suites            | `POST /suites` (mgr), `GET/PATCH/DELETE /suites/:id`                                                             |
+| Suites            | `POST /suites` (mgr), `GET/PATCH/DELETE /suites/:id` (PATCH/DELETE mgr), `POST /suites/:id/duplicate` (mgr)       |
 | Cases             | `POST /cases` (mgr), `GET /cases/:id`, `PATCH/DELETE /cases/:id` (mgr), `POST /cases/:id/clone` (mgr)            |
 | Excel import      | `GET /imports/cases/template.xlsx` (mgr), `POST /imports/cases/preview` (mgr, multipart — dry run), `POST /imports/cases` (mgr, multipart — commit) |
 | Milestones        | `GET /milestones`, `POST /milestones` (mgr), `PATCH/DELETE /milestones/:id` (mgr)                                |

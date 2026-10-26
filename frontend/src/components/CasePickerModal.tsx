@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, X } from "lucide-react";
 import { api } from "../lib/api";
 import { logger } from "../lib/logger";
 import { PriorityIcon } from "./PriorityIcon";
 import { Button } from "./ui/Button";
 import { PageLoader } from "./Spinner";
-import { MultiSelect } from "./ui/MultiSelect";
-import { TEST_LEVELS } from "../lib/enums";
+import { CaseFilterBar } from "./CaseFilterBar";
 import {
-  CASE_FILTER_FIELDS,
   buildCaseTree,
   caseTags,
   filterCases,
@@ -99,23 +97,6 @@ export function CasePickerModal({ projectId, initialSelected, onCancel, onDone }
   const allState: SelectionState["state"] =
     visibleSelected === 0 ? "none" : visibleSelected === visibleIds.length ? "all" : "some";
 
-  const fieldLabel = (f: CaseFilterField) =>
-    f === "priority" ? t("suites.priority") : f === "testLevel" ? t("test_level.label") : t("runs.picker.tags");
-  const valueOptions = (f: CaseFilterField) =>
-    f === "priority"
-      ? ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((p) => ({
-          value: p,
-          label: <><PriorityIcon priority={p} /> {t(`priority.${p}`)}</>,
-          searchText: t(`priority.${p}`),
-        }))
-      : f === "testLevel"
-        ? TEST_LEVELS.map((l) => ({ value: l, label: t(`test_level.${l}`) }))
-        : tagOptions.map((tag) => ({ value: tag, label: tag }));
-  const setFields = (fields: string[]) => {
-    const next = CASE_FILTER_FIELDS.filter((f) => fields.includes(f));
-    setFilterFields(next);
-    setFilters((prev) => Object.fromEntries(next.map((f) => [f, prev[f] ?? []])) as CaseFilters);
-  };
   const active = activeId && tree ? tree.byId.get(activeId) ?? null : null;
   const results = tree ? matchCases(tree, query) : [];
   const searching = query.trim().length > 0;
@@ -209,39 +190,16 @@ export function CasePickerModal({ projectId, initialSelected, onCancel, onDone }
         </header>
 
         <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative w-full max-w-md">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                className="input pl-8"
-                placeholder={t("runs.picker.search_placeholder")}
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                autoFocus
-              />
-            </div>
-            {filterFields.map((f) => (
-              <MultiSelect
-                key={f}
-                variant="chip"
-                prefix={fieldLabel(f)}
-                placeholder={fieldLabel(f)}
-                options={valueOptions(f)}
-                value={filters[f] ?? []}
-                onChange={(v) => setFilters((prev) => ({ ...prev, [f]: v }))}
-                aria-label={fieldLabel(f)}
-              />
-            ))}
-            <MultiSelect
-              variant="link"
-              triggerLabel={t("runs.picker.add_filter")}
-              placeholder={t("runs.picker.add_filter")}
-              searchable
-              options={CASE_FILTER_FIELDS.map((f) => ({ value: f, label: fieldLabel(f), searchText: fieldLabel(f) }))}
-              value={filterFields}
-              onChange={setFields}
-            />
-          </div>
+          <CaseFilterBar
+            query={query}
+            onQuery={setQuery}
+            fields={filterFields}
+            onFields={setFilterFields}
+            filters={filters}
+            onFilters={setFilters}
+            tags={tagOptions}
+            autoFocus
+          />
         </div>
 
         {isLoading || !tree ? (

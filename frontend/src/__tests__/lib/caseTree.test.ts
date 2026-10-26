@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildCaseTree, caseTags, filterCases, matchCases, suiteState, toggleCases, type CaseTreeData } from "../../lib/caseTree";
+import { buildCaseTree, caseTags, deletionImpact, filterCases, matchCases, parentOptions, suiteState, toggleCases, type CaseTreeData } from "../../lib/caseTree";
 
 // Gallery
 // ├── Shotisize (c1, c2)
@@ -109,5 +109,29 @@ describe("filterCases", () => {
 describe("caseTags", () => {
   it("lists each tag once, sorted", () => {
     expect(caseTags(data.cases)).toEqual(["gallery", "severity:major", "severity:minor"]);
+  });
+});
+
+describe("parentOptions", () => {
+  const tree = buildCaseTree(data);
+
+  it("lists every suite in tree order with its depth", () => {
+    expect(parentOptions(tree).map((o) => `${o.depth}:${o.id}`)).toEqual(["0:gallery", "1:shot", "2:loc", "1:filters", "0:auth"]);
+  });
+
+  it("leaves out the suite being moved and its sub-suites", () => {
+    expect(parentOptions(tree, "shot").map((o) => o.id)).toEqual(["gallery", "filters", "auth"]);
+  });
+});
+
+describe("deletionImpact", () => {
+  const tree = buildCaseTree(data);
+
+  it("counts the picked suites with their sub-suites and every case they hold", () => {
+    expect(deletionImpact(tree, ["shot"], [])).toEqual({ suites: 2, cases: 3 });
+  });
+
+  it("does not count twice what a picked suite already covers", () => {
+    expect(deletionImpact(tree, ["gallery", "loc"], ["c1", "c5"])).toEqual({ suites: 4, cases: 5 });
   });
 });

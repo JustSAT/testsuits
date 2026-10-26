@@ -1,7 +1,7 @@
 // Suite tree and selection logic for the run case picker. DOM-free so it is
 // unit-tested on its own; CasePickerModal only renders what this derives.
 
-export type PickerSuite = { id: string; parentId: string | null; name: string };
+export type PickerSuite = { id: string; parentId: string | null; name: string; description?: string | null };
 export type PickerCase = { id: string; suiteId: string; title: string; priority: string; testLevel: string; tags: string[] };
 export type CaseTreeData = { suites: PickerSuite[]; cases: PickerCase[] };
 
@@ -92,4 +92,40 @@ export function filterCases(cases: PickerCase[], filters: CaseFilters): PickerCa
 /** Every tag used by the given cases, once each, sorted. */
 export function caseTags(cases: PickerCase[]): string[] {
   return Array.from(new Set(cases.flatMap((c) => c.tags))).sort();
+}
+
+export type ParentOption = { id: string; name: string; depth: number };
+
+/**
+ * Suites in tree order with their depth, for a "parent suite" select. When
+ * `excludeId` is given, that suite and its sub-suites are left out: a suite
+ * cannot move under itself.
+ */
+export function parentOptions(tree: CaseTree, excludeId?: string): ParentOption[] {
+  const out: ParentOption[] = [];
+  const walk = (nodes: SuiteNode[], depth: number) => {
+    for (const n of nodes) {
+      if (n.id === excludeId) continue;
+      out.push({ id: n.id, name: n.name, depth });
+      walk(n.children, depth + 1);
+    }
+  };
+  walk(tree.roots, 0);
+  return out;
+}
+
+/** How many suites (sub-suites included) and cases a delete would remove. */
+export function deletionImpact(tree: CaseTree, suiteIds: string[], caseIds: string[]): { suites: number; cases: number } {
+  const suites = new Set<string>();
+  const cases = new Set<string>(caseIds);
+  const walk = (n: SuiteNode) => {
+    suites.add(n.id);
+    n.cases.forEach((c) => cases.add(c.id));
+    n.children.forEach(walk);
+  };
+  for (const id of suiteIds) {
+    const node = tree.byId.get(id);
+    if (node) walk(node);
+  }
+  return { suites: suites.size, cases: cases.size };
 }

@@ -90,7 +90,7 @@ projectsRouter.get("/:id/case-tree", async (req: AuthedRequest, res, next) => {
     const [suites, cases] = await Promise.all([
       prisma.testSuite.findMany({
         where: { projectId: project.id },
-        select: { id: true, parentId: true, name: true },
+        select: { id: true, parentId: true, name: true, description: true },
         orderBy: { createdAt: "asc" },
       }),
       prisma.testCase.findMany({

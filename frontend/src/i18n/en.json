@@ -146,7 +146,8 @@
     "IMPORT_HAS_ERRORS": "The file still has row errors. Fix them, or tick \"import valid rows only\".",
     "IMPORT_NOTHING_TO_IMPORT": "Nothing to import — every row is a duplicate or invalid.",
     "RUN_CASES_NOT_IN_PROJECT": "Some of the selected cases don't belong to this project.",
-    "RUN_SUITES_NOT_IN_PROJECT": "Some of the selected suites don't belong to this project."
+    "RUN_SUITES_NOT_IN_PROJECT": "Some of the selected suites don't belong to this project.",
+    "SUITE_INVALID_PARENT": "The parent suite must be another suite of this project, outside the suite being moved."
   },
   "confirm": {
     "default_title": "Are you sure?",
@@ -228,23 +229,13 @@
     "milestones": "Milestones",
     "test_runs": "Test runs",
     "key_placeholder": "AUTH",
-    "new_suite": "New suite",
     "suite_name": "Suite name",
-    "test_suites": "Test Suites",
     "no_suites": "No suites yet."
   },
   "suites": {
-    "sub_suite": "Sub-suite",
-    "test_case": "Test case",
-    "sub_suites": "Sub-suites",
-    "test_cases": "Test Cases",
     "no_cases": "No test cases in this suite yet.",
     "case_title": "Case title",
-    "priority": "Priority",
-    "cases_total_one": "{{count}} test case",
-    "cases_total_other": "{{count}} test cases",
-    "sub_suites_total_one": "{{count}} sub-suite",
-    "sub_suites_total_other": "{{count}} sub-suites"
+    "priority": "Priority"
   },
   "cases": {
     "clone": "Clone",
@@ -933,5 +924,27 @@
     "TESTER": "Tester",
     "MANAGER": "Manager",
     "ADMIN": "Admin"
+  },
+  "repository": {
+    "title": "{{name}} repository",
+    "counts": "{{cases}} cases | {{suites}} suites",
+    "test_case": "Test case",
+    "suites": "Suites",
+    "all_cases": "All cases",
+    "create_case": "Create test case",
+    "create_suite": "Create suite",
+    "edit_suite": "Edit suite",
+    "duplicate": "Duplicate",
+    "copy_name": "{{name}} (copy)",
+    "delete_title": "Delete permanently?",
+    "delete_body": "Suites removed: {{suites}}. Test cases removed: {{cases}}, together with their results in test runs. This cannot be undone.",
+    "deleted": "Deleted — suites: {{suites}}, test cases: {{cases}}.",
+    "selected_one": "{{count}} item selected",
+    "selected_other": "{{count}} items selected",
+    "parent_suite": "Parent suite",
+    "project_root": "Project root",
+    "suite_name_placeholder": "For example: Web Application",
+    "suite": "Suite",
+    "select_suite": "Select suite…"
   }
 }

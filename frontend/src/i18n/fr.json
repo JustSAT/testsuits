@@ -146,7 +146,8 @@
     "IMPORT_HAS_ERRORS": "Le fichier contient encore des lignes en erreur. Corrigez-les ou cochez « importer uniquement les lignes valides ».",
     "IMPORT_NOTHING_TO_IMPORT": "Rien à importer — toutes les lignes sont des doublons ou sont invalides.",
     "RUN_CASES_NOT_IN_PROJECT": "Certains cas sélectionnés n'appartiennent pas à ce projet.",
-    "RUN_SUITES_NOT_IN_PROJECT": "Certaines suites sélectionnées n'appartiennent pas à ce projet."
+    "RUN_SUITES_NOT_IN_PROJECT": "Certaines suites sélectionnées n'appartiennent pas à ce projet.",
+    "SUITE_INVALID_PARENT": "La suite parente doit être une autre suite de ce projet, hors de la suite déplacée."
   },
   "confirm": {
     "default_title": "Êtes-vous sûr ?",
@@ -247,23 +248,13 @@
     "milestones": "Jalons",
     "test_runs": "Exécutions",
     "key_placeholder": "AUTH",
-    "new_suite": "Nouvelle suite",
     "suite_name": "Nom de la suite",
-    "test_suites": "Suites de tests",
     "no_suites": "Aucune suite."
   },
   "suites": {
-    "sub_suite": "Sous-suite",
-    "test_case": "Cas de test",
-    "sub_suites": "Sous-suites",
-    "test_cases": "Cas de test",
     "no_cases": "Aucun cas de test dans cette suite.",
     "case_title": "Titre du cas",
-    "priority": "Priorité",
-    "cases_total_one": "{{count}} cas de test",
-    "cases_total_other": "{{count}} cas de test",
-    "sub_suites_total_one": "{{count}} sous-suite",
-    "sub_suites_total_other": "{{count}} sous-suites"
+    "priority": "Priorité"
   },
   "cases": {
     "clone": "Cloner",
@@ -933,5 +924,27 @@
     "TESTER": "Testeur",
     "MANAGER": "Manager",
     "ADMIN": "Admin"
+  },
+  "repository": {
+    "title": "Référentiel {{name}}",
+    "counts": "{{cases}} cas | {{suites}} suites",
+    "test_case": "Cas de test",
+    "suites": "Suites",
+    "all_cases": "Tous les cas",
+    "create_case": "Créer un cas de test",
+    "create_suite": "Créer une suite",
+    "edit_suite": "Modifier la suite",
+    "duplicate": "Dupliquer",
+    "copy_name": "{{name}} (copie)",
+    "delete_title": "Supprimer définitivement ?",
+    "delete_body": "Suites supprimées : {{suites}}. Cas de test supprimés : {{cases}}, avec leurs résultats dans les exécutions. Action irréversible.",
+    "deleted": "Supprimé — suites : {{suites}}, cas de test : {{cases}}.",
+    "selected_one": "{{count}} élément sélectionné",
+    "selected_other": "{{count}} éléments sélectionnés",
+    "parent_suite": "Suite parente",
+    "project_root": "Racine du projet",
+    "suite_name_placeholder": "Par exemple : Application web",
+    "suite": "Suite",
+    "select_suite": "Choisir une suite…"
   }
 }

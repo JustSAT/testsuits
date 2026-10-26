@@ -62,7 +62,7 @@ describe("GET /api/projects/:id/case-tree", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.suites).toHaveLength(4);
-    expect(res.body.suites).toContainEqual({ id: shotisize.id, parentId: gallery.id, name: "Shotisize" });
+    expect(res.body.suites).toContainEqual({ id: shotisize.id, parentId: gallery.id, name: "Shotisize", description: null });
     expect(res.body.cases).toHaveLength(4);
     expect(res.body.cases[0]).toEqual({
       id: cases[0].id,

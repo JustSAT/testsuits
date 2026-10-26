@@ -64,3 +64,16 @@ export async function expandSuiteIds(projectId: string, rootIds: string[]): Prom
   }
   return { ids: Array.from(ids), unknown };
 }
+
+/**
+ * Whether `parentId` may become the parent of `suiteId` (a new suite when
+ * `suiteId` is null): it must be a suite of the same project, and not the
+ * suite itself or one of its sub-suites.
+ */
+export async function isValidParent(projectId: string, suiteId: string | null, parentId: string): Promise<boolean> {
+  const suites = await loadSuites(projectId);
+  if (!suites.some((s) => s.id === parentId)) return false;
+  if (!suiteId) return true;
+  const { ids } = await expandSuiteIds(projectId, [suiteId]);
+  return !ids.includes(parentId);
+}
