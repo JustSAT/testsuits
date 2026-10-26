@@ -4,15 +4,21 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Search, X } from "lucide-react";
 import { api } from "../lib/api";
 import { logger } from "../lib/logger";
-import { priorityTone } from "../lib/status";
-import { Badge } from "./ui/Badge";
+import { PriorityIcon } from "./PriorityIcon";
 import { Button } from "./ui/Button";
 import { PageLoader } from "./Spinner";
+import { MultiSelect } from "./ui/MultiSelect";
+import { TEST_LEVELS } from "../lib/enums";
 import {
+  CASE_FILTER_FIELDS,
   buildCaseTree,
+  caseTags,
+  filterCases,
   matchCases,
   suiteState,
   toggleCases,
+  type CaseFilterField,
+  type CaseFilters,
   type CaseTreeData,
   type PickerCase,
   type SelectionState,
@@ -48,7 +54,8 @@ function TriCheckbox({ state, onChange, label }: { state: SelectionState["state"
 /**
  * Picks the cases of a new run, Qase style: a suite tree on the left with
  * per-suite "selected / total" counts, the active suite's cases and sub-suites
- * on the right, and a search across every case title.
+ * on the right, a search across every case title and "Add filter". Filters and
+ * search only narrow what is shown: every picked case goes into the run.
  */
 export function CasePickerModal({ projectId, initialSelected, onCancel, onDone }: Props) {
   const { t } = useTranslation();
@@ -56,12 +63,19 @@ export function CasePickerModal({ projectId, initialSelected, onCancel, onDone }
   const [activeId, setActiveId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
+  const [filterFields, setFilterFields] = useState<CaseFilterField[]>([]);
+  const [filters, setFilters] = useState<CaseFilters>({});
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["case-tree", projectId],
     queryFn: async () => (await api.get<CaseTreeData>(`/projects/${projectId}/case-tree`)).data,
   });
-  const tree = useMemo(() => (data ? buildCaseTree(data) : null), [data]);
+  // The tree only holds cases passing the filters; counts and "select all" follow it.
+  const tree = useMemo(
+    () => (data ? buildCaseTree({ suites: data.suites, cases: filterCases(data.cases, filters) }) : null),
+    [data, filters],
+  );
+  const tagOptions = useMemo(() => (data ? caseTags(data.cases) : []), [data]);
 
   useEffect(() => {
     if (isError) logger.error("case tree load failed", { projectId });
@@ -79,9 +93,29 @@ export function CasePickerModal({ projectId, initialSelected, onCancel, onDone }
     return () => document.removeEventListener("keydown", onKey);
   }, [onCancel]);
 
-  const allIds = useMemo(() => tree?.cases.map((c) => c.id) ?? [], [tree]);
+  const totalCases = data?.cases.length ?? 0;
+  const visibleIds = useMemo(() => tree?.cases.map((c) => c.id) ?? [], [tree]);
+  const visibleSelected = visibleIds.filter((id) => selected.has(id)).length;
   const allState: SelectionState["state"] =
-    selected.size === 0 ? "none" : selected.size === allIds.length ? "all" : "some";
+    visibleSelected === 0 ? "none" : visibleSelected === visibleIds.length ? "all" : "some";
+
+  const fieldLabel = (f: CaseFilterField) =>
+    f === "priority" ? t("suites.priority") : f === "testLevel" ? t("test_level.label") : t("runs.picker.tags");
+  const valueOptions = (f: CaseFilterField) =>
+    f === "priority"
+      ? ["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((p) => ({
+          value: p,
+          label: <><PriorityIcon priority={p} /> {t(`priority.${p}`)}</>,
+          searchText: t(`priority.${p}`),
+        }))
+      : f === "testLevel"
+        ? TEST_LEVELS.map((l) => ({ value: l, label: t(`test_level.${l}`) }))
+        : tagOptions.map((tag) => ({ value: tag, label: tag }));
+  const setFields = (fields: string[]) => {
+    const next = CASE_FILTER_FIELDS.filter((f) => fields.includes(f));
+    setFilterFields(next);
+    setFilters((prev) => Object.fromEntries(next.map((f) => [f, prev[f] ?? []])) as CaseFilters);
+  };
   const active = activeId && tree ? tree.byId.get(activeId) ?? null : null;
   const results = tree ? matchCases(tree, query) : [];
   const searching = query.trim().length > 0;
@@ -106,7 +140,7 @@ export function CasePickerModal({ projectId, initialSelected, onCancel, onDone }
     return (
       <label className="flex items-start gap-3 px-3 py-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer">
         <input type="checkbox" className="mt-1 shrink-0" checked={selected.has(c.id)} onChange={() => toggle([c.id])} />
-        <Badge tone={priorityTone(c.priority)} size="xs" className="mt-0.5 shrink-0">{t(`priority.${c.priority}`)}</Badge>
+        <span className="mt-0.5"><PriorityIcon priority={c.priority} /></span>
         <span className="flex-1 min-w-0">
           <span className="text-sm">{c.title}</span>
           {path && <span className="block text-xs text-slate-500 truncate">{path}</span>}
@@ -166,7 +200,7 @@ export function CasePickerModal({ projectId, initialSelected, onCancel, onDone }
           <div className="flex-1">
             <h2 id="case-picker-title" className="font-semibold text-lg">{t("runs.picker.title")}</h2>
             <p className="text-xs text-slate-500">
-              {t("runs.picker.selected_of", { selected: selected.size, total: allIds.length })}
+              {t("runs.picker.selected_of", { selected: selected.size, total: totalCases })}
             </p>
           </div>
           <button type="button" className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200" aria-label={t("common.close")} onClick={onCancel}>
@@ -175,14 +209,37 @@ export function CasePickerModal({ projectId, initialSelected, onCancel, onDone }
         </header>
 
         <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-800">
-          <div className="relative max-w-md">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              className="input pl-8"
-              placeholder={t("runs.picker.search_placeholder")}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              autoFocus
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative w-full max-w-md">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                className="input pl-8"
+                placeholder={t("runs.picker.search_placeholder")}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                autoFocus
+              />
+            </div>
+            {filterFields.map((f) => (
+              <MultiSelect
+                key={f}
+                variant="chip"
+                prefix={fieldLabel(f)}
+                placeholder={fieldLabel(f)}
+                options={valueOptions(f)}
+                value={filters[f] ?? []}
+                onChange={(v) => setFilters((prev) => ({ ...prev, [f]: v }))}
+                aria-label={fieldLabel(f)}
+              />
+            ))}
+            <MultiSelect
+              variant="link"
+              triggerLabel={t("runs.picker.add_filter")}
+              placeholder={t("runs.picker.add_filter")}
+              searchable
+              options={CASE_FILTER_FIELDS.map((f) => ({ value: f, label: fieldLabel(f), searchText: fieldLabel(f) }))}
+              value={filterFields}
+              onChange={setFields}
             />
           </div>
         </div>
@@ -191,14 +248,14 @@ export function CasePickerModal({ projectId, initialSelected, onCancel, onDone }
           <div className="flex-1 flex items-center justify-center">
             {isError ? <p role="alert" className="text-sm text-red-600">{t("common.something_went_wrong")}</p> : <PageLoader />}
           </div>
-        ) : tree.cases.length === 0 ? (
+        ) : totalCases === 0 ? (
           <div className="flex-1 flex items-center justify-center text-sm text-slate-500">{t("runs.picker.no_cases")}</div>
         ) : (
           <div className="flex-1 flex min-h-0">
             <aside className="w-80 shrink-0 border-r border-slate-200 dark:border-slate-800 overflow-auto p-2">
               <div className="flex items-center gap-1.5 px-1 py-1 text-sm font-medium">
                 <span className="w-[14px]" />
-                <TriCheckbox state={allState} label={t("runs.picker.select_all")} onChange={() => toggle(allIds)} />
+                <TriCheckbox state={allState} label={t("runs.picker.select_all")} onChange={() => toggle(visibleIds)} />
                 <span className="flex-1">{t("runs.picker.select_all")}</span>
                 <button type="button" className="text-slate-500" title={t("runs.picker.expand_all")} aria-label={t("runs.picker.expand_all")}
                   onClick={() => setExpanded(new Set(tree.byId.keys()))}>

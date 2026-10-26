@@ -95,7 +95,7 @@ projectsRouter.get("/:id/case-tree", async (req: AuthedRequest, res, next) => {
       }),
       prisma.testCase.findMany({
         where: { suite: { projectId: project.id } },
-        select: { id: true, suiteId: true, title: true, priority: true, testLevel: true },
+        select: { id: true, suiteId: true, title: true, priority: true, testLevel: true, tags: true },
         orderBy: { createdAt: "asc" },
       }),
     ]);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildCaseTree, matchCases, suiteState, toggleCases, type CaseTreeData } from "../../lib/caseTree";
+import { buildCaseTree, caseTags, filterCases, matchCases, suiteState, toggleCases, type CaseTreeData } from "../../lib/caseTree";
 
 // Gallery
 // ├── Shotisize (c1, c2)
@@ -15,11 +15,11 @@ const data: CaseTreeData = {
     { id: "auth", parentId: null, name: "Auth" },
   ],
   cases: [
-    { id: "c1", suiteId: "shot", title: "Shots open", priority: "HIGH", testLevel: "SMOKE" },
-    { id: "c2", suiteId: "shot", title: "Shots play", priority: "MEDIUM", testLevel: "REGRESSION" },
-    { id: "c3", suiteId: "loc", title: "French labels", priority: "LOW", testLevel: "REGRESSION" },
-    { id: "c4", suiteId: "filters", title: "Filter by date", priority: "MEDIUM", testLevel: "SMOKE" },
-    { id: "c5", suiteId: "auth", title: "Sign in", priority: "CRITICAL", testLevel: "SMOKE" },
+    { id: "c1", suiteId: "shot", title: "Shots open", priority: "HIGH", testLevel: "SMOKE", tags: ["severity:major", "gallery"] },
+    { id: "c2", suiteId: "shot", title: "Shots play", priority: "MEDIUM", testLevel: "REGRESSION", tags: [] },
+    { id: "c3", suiteId: "loc", title: "French labels", priority: "LOW", testLevel: "REGRESSION", tags: ["gallery"] },
+    { id: "c4", suiteId: "filters", title: "Filter by date", priority: "MEDIUM", testLevel: "SMOKE", tags: ["severity:minor"] },
+    { id: "c5", suiteId: "auth", title: "Sign in", priority: "CRITICAL", testLevel: "SMOKE", tags: ["severity:major"] },
   ],
 };
 
@@ -82,5 +82,32 @@ describe("matchCases", () => {
 
   it("returns nothing for an empty query", () => {
     expect(matchCases(tree, "   ")).toEqual([]);
+  });
+});
+
+describe("filterCases", () => {
+  const ids = (filters: Parameters<typeof filterCases>[1]) => filterCases(data.cases, filters).map((c) => c.id);
+
+  it("keeps every case when no filter has values", () => {
+    expect(ids({})).toHaveLength(5);
+    expect(ids({ priority: [], tags: [] })).toHaveLength(5);
+  });
+
+  it("matches any of the chosen values within a field", () => {
+    expect(ids({ priority: ["HIGH", "CRITICAL"] })).toEqual(["c1", "c5"]);
+  });
+
+  it("requires every field that has values to match", () => {
+    expect(ids({ testLevel: ["SMOKE"], priority: ["MEDIUM"] })).toEqual(["c4"]);
+  });
+
+  it("matches a case carrying any of the chosen tags", () => {
+    expect(ids({ tags: ["gallery", "severity:minor"] })).toEqual(["c1", "c3", "c4"]);
+  });
+});
+
+describe("caseTags", () => {
+  it("lists each tag once, sorted", () => {
+    expect(caseTags(data.cases)).toEqual(["gallery", "severity:major", "severity:minor"]);
   });
 });

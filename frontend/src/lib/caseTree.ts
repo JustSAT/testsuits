@@ -2,7 +2,7 @@
 // unit-tested on its own; CasePickerModal only renders what this derives.
 
 export type PickerSuite = { id: string; parentId: string | null; name: string };
-export type PickerCase = { id: string; suiteId: string; title: string; priority: string; testLevel: string };
+export type PickerCase = { id: string; suiteId: string; title: string; priority: string; testLevel: string; tags: string[] };
 export type CaseTreeData = { suites: PickerSuite[]; cases: PickerCase[] };
 
 export type SuiteNode = PickerSuite & {
@@ -66,4 +66,30 @@ export function matchCases(tree: CaseTree, query: string): PickerCase[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
   return tree.cases.filter((c) => c.title.toLowerCase().includes(q));
+}
+
+/** Fields the picker's "Add filter" can narrow the list by. */
+export const CASE_FILTER_FIELDS = ["priority", "testLevel", "tags"] as const;
+export type CaseFilterField = (typeof CASE_FILTER_FIELDS)[number];
+export type CaseFilters = Partial<Record<CaseFilterField, string[]>>;
+
+/**
+ * Cases matching every filter that has values; within a field any chosen
+ * value matches (for tags: a case carrying any of them). Filters only narrow
+ * what the picker shows — they never drop a case already picked.
+ */
+export function filterCases(cases: PickerCase[], filters: CaseFilters): PickerCase[] {
+  const active = CASE_FILTER_FIELDS.filter((f) => (filters[f]?.length ?? 0) > 0);
+  if (active.length === 0) return cases;
+  return cases.filter((c) =>
+    active.every((f) => {
+      const wanted = filters[f]!;
+      return f === "tags" ? c.tags.some((tag) => wanted.includes(tag)) : wanted.includes(c[f]);
+    }),
+  );
+}
+
+/** Every tag used by the given cases, once each, sorted. */
+export function caseTags(cases: PickerCase[]): string[] {
+  return Array.from(new Set(cases.flatMap((c) => c.tags))).sort();
 }

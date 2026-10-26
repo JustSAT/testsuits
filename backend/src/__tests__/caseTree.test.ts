@@ -70,6 +70,7 @@ describe("GET /api/projects/:id/case-tree", () => {
       title: "Shots open",
       priority: "MEDIUM",
       testLevel: "SMOKE",
+      tags: [],
     });
   });
 

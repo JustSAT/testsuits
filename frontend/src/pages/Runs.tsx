@@ -1,36 +1,19 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
-import { Plus, List, LayoutGrid, Archive, RotateCcw, ListChecks, X } from "lucide-react";
+import { Plus, List, LayoutGrid, Archive, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { z } from "zod";
 import { api } from "../lib/api";
 import { runStatusColors } from "../lib/status";
 import { Badge } from "../components/ui/Badge";
-import { TEST_LEVELS } from "../lib/enums";
-import { activeOf, makeLabelLookup, useConfigOptions } from "../lib/configOptions";
+import { makeLabelLookup, useConfigOptions } from "../lib/configOptions";
 import { logger } from "../lib/logger";
 import { useAuth } from "../lib/auth";
 import { useConfirm } from "../components/ui/ConfirmDialog";
-import { Field } from "../components/Field";
-import { useZodForm } from "../lib/useZodForm";
-import { nonEmpty } from "../lib/schemas";
-import { apiErrorMessage } from "../lib/apiError";
-import { CasePickerModal } from "../components/CasePickerModal";
+import { NewRunModal } from "../components/NewRunModal";
 
 const KANBAN_COLUMNS = ["DRAFT", "IN_PROGRESS", "COMPLETED"] as const;
-
-const schema = z.object({
-  projectId: nonEmpty("Project"),
-  name: nonEmpty("Run name"),
-  milestoneId: z.string().optional(),
-  environment: nonEmpty("Environment"),
-  dueDate: z.string().optional(),
-  description: z.string().optional(),
-  assigneeId: z.string().optional(),
-});
-type Values = z.infer<typeof schema>;
 
 export function Runs() {
   const { t } = useTranslation();
@@ -45,32 +28,6 @@ export function Runs() {
   const confirmDialog = useConfirm();
 
   const [open, setOpen] = useState(false);
-  const [selectedCaseIds, setSelectedCaseIds] = useState<string[]>([]);
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [selectedConnectivities, setSelectedConnectivities] = useState<string[]>([]);
-  const [selectedLocales, setSelectedLocales] = useState<string[]>([]);
-  const [testLevels, setTestLevels] = useState<string[]>([]);
-  const [suiteError, setSuiteError] = useState<string | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const form = useZodForm<Values>(schema, {
-    defaultValues: {
-      projectId: projectIdFilter,
-      name: "",
-      milestoneId: "",
-      environment: "",
-      dueDate: "",
-      description: "",
-      assigneeId: !isManager && user?.id ? user.id : "",
-    },
-  });
-  const projectId = form.watch("projectId");
-
-  // Picked cases belong to one project; switching projects starts over.
-  useEffect(() => {
-    setSelectedCaseIds([]);
-  }, [projectId]);
 
   const runsParams: Record<string, string> = {};
   if (projectIdFilter) runsParams.projectId = projectIdFilter;
@@ -82,118 +39,12 @@ export function Runs() {
     queryFn: async () => (await api.get("/runs", { params: runsParams })).data,
   });
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ["projects"],
-    queryFn: async () => (await api.get("/projects")).data,
-  });
-
-  const { data: project } = useQuery({
-    queryKey: ["project", projectId],
-    queryFn: async () => (await api.get(`/projects/${projectId}`)).data,
-    enabled: !!projectId,
-  });
-
-  const { data: milestones = [] } = useQuery({
-    queryKey: ["milestones", projectId],
-    queryFn: async () => (await api.get("/milestones", { params: { projectId } })).data,
-    enabled: !!projectId,
-  });
-
-  const { data: users = [] } = useQuery({
-    queryKey: ["users"],
-    queryFn: async () => (await api.get("/users")).data,
-  });
-
-  // Company-scoped run parameter options. Active rows drive the checkboxes
-  // below; deleted rows are kept so historical runs still render real labels.
+  // Company-scoped run parameter options; deleted rows are kept so historical
+  // runs still render real labels.
   const { data: configOptions = [] } = useConfigOptions();
-  const activePlatforms = activeOf(configOptions, "PLATFORM");
-  const activeConnectivities = activeOf(configOptions, "CONNECTIVITY");
-  const activeLocales = activeOf(configOptions, "LOCALE");
   const platformLabel = makeLabelLookup(configOptions, "PLATFORM");
   const connectivityLabel = makeLabelLookup(configOptions, "CONNECTIVITY");
   const localeLabel = makeLabelLookup(configOptions, "LOCALE");
-
-  const create = useMutation({
-    mutationFn: async (values: Values) =>
-      (await api.post("/runs", {
-        projectId: values.projectId,
-        milestoneId: values.milestoneId || null,
-        name: values.name,
-        description: values.description || null,
-        environment: values.environment,
-        platforms: selectedPlatforms.length ? selectedPlatforms : undefined,
-        connectivities: selectedConnectivities.length ? selectedConnectivities : undefined,
-        locales: selectedLocales.length ? selectedLocales : undefined,
-        testLevels: testLevels.length ? testLevels : undefined,
-        dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
-        caseIds: selectedCaseIds,
-        assigneeId: values.assigneeId || null,
-      }, { silent: true })).data,
-    onSuccess: (run) => {
-      logger.info("run created", {
-        runId: run.id,
-        platforms: selectedPlatforms,
-        connectivities: selectedConnectivities,
-        locales: selectedLocales,
-        levels: testLevels,
-      });
-      toast.success(t("common.saved"));
-      qc.invalidateQueries({ queryKey: ["runs"] });
-      setOpen(false);
-      form.reset({
-        projectId: projectIdFilter,
-        name: "",
-        milestoneId: "",
-        environment: "",
-        dueDate: "",
-        description: "",
-        assigneeId: !isManager && user?.id ? user.id : "",
-      });
-      setSelectedCaseIds([]);
-      setSelectedPlatforms([]);
-      setSelectedConnectivities([]);
-      setSelectedLocales([]);
-      setTestLevels([]);
-      setSuiteError(null);
-      setSubmitError(null);
-    },
-    onError: (e: unknown) => {
-      const msg = apiErrorMessage(e, t("common.something_went_wrong"));
-      setSubmitError(msg);
-      logger.error("run create failed", { msg });
-    },
-  });
-
-  function onValid(values: Values) {
-    if (selectedCaseIds.length === 0) {
-      setSuiteError(t("runs.validation.case_required"));
-      return;
-    }
-    setSuiteError(null);
-    setSubmitError(null);
-    create.mutate(values);
-  }
-
-  function closeForm() {
-    setOpen(false);
-    form.reset({
-      projectId: projectIdFilter,
-      name: "",
-      milestoneId: "",
-      environment: "",
-      dueDate: "",
-      description: "",
-      assigneeId: !isManager && user?.id ? user.id : "",
-    });
-    setSelectedCaseIds([]);
-    setSelectedPlatforms([]);
-    setSelectedConnectivities([]);
-    setSelectedLocales([]);
-    setTestLevels([]);
-    setSuiteError(null);
-    setSubmitError(null);
-  }
 
   const setView = (next: "list" | "kanban") => {
     const p = new URLSearchParams(params);
@@ -308,170 +159,7 @@ export function Runs() {
       </header>
 
       {open && tab === "active" && (
-        <form noValidate onSubmit={form.handleSubmit(onValid)} className="card p-5 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field name="projectId" label={t("runs.project")} error={form.formState.errors.projectId?.message}>
-              <select
-                className="input"
-                {...form.register("projectId", {
-                  onChange: () => {
-                    setSelectedCaseIds([]);
-                    form.setValue("milestoneId", "");
-                  },
-                })}
-              >
-                <option value="">{t("runs.select_project")}</option>
-                {projects.map((p: { id: string; name: string }) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </Field>
-            <Field name="name" label={t("runs.run_name")} error={form.formState.errors.name?.message}>
-              <input className="input" {...form.register("name")} />
-            </Field>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <Field name="milestoneId" label={t("runs.milestone")} error={form.formState.errors.milestoneId?.message}>
-              <select className="input" disabled={!projectId} {...form.register("milestoneId")}>
-                <option value="">—</option>
-                {milestones.map((m: { id: string; name: string }) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </Field>
-            <Field name="environment" label={t("runs.environment")} error={form.formState.errors.environment?.message}>
-              <input className="input" placeholder={t("runs.environment_placeholder")} {...form.register("environment")} />
-            </Field>
-            <Field name="dueDate" label={t("runs.due_date")} error={form.formState.errors.dueDate?.message}>
-              <input type="date" className="input" {...form.register("dueDate")} />
-            </Field>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="label">{t("platform.label")}</label>
-              <div className="flex gap-2 flex-wrap">
-                {activePlatforms.length === 0 && <span className="text-xs text-slate-500">{t("runs.no_options_configured")}</span>}
-                {activePlatforms.map((p) => (
-                  <label key={p.code} className="flex items-center gap-1 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={selectedPlatforms.includes(p.code)}
-                      onChange={() => setSelectedPlatforms((xs) => xs.includes(p.code) ? xs.filter((x) => x !== p.code) : [...xs, p.code])}
-                    />
-                    {p.label}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="label">{t("connectivity.label")}</label>
-              <div className="flex gap-2 flex-wrap">
-                {activeConnectivities.length === 0 && <span className="text-xs text-slate-500">{t("runs.no_options_configured")}</span>}
-                {activeConnectivities.map((c) => (
-                  <label key={c.code} className="flex items-center gap-1 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={selectedConnectivities.includes(c.code)}
-                      onChange={() => setSelectedConnectivities((xs) => xs.includes(c.code) ? xs.filter((x) => x !== c.code) : [...xs, c.code])}
-                    />
-                    {c.label}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="label">{t("locale.label")}</label>
-              <div className="flex gap-2 flex-wrap">
-                {activeLocales.length === 0 && <span className="text-xs text-slate-500">{t("runs.no_options_configured")}</span>}
-                {activeLocales.map((l) => (
-                  <label key={l.code} className="flex items-center gap-1 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={selectedLocales.includes(l.code)}
-                      onChange={() => setSelectedLocales((xs) => xs.includes(l.code) ? xs.filter((x) => x !== l.code) : [...xs, l.code])}
-                    />
-                    {l.label}
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div>
-            <label className="label">{t("test_level.filter_by")}</label>
-            <div className="flex gap-2 flex-wrap">
-              {TEST_LEVELS.map((lvl) => (
-                <label key={lvl} className="flex items-center gap-1 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={testLevels.includes(lvl)}
-                    onChange={() => setTestLevels((xs) => xs.includes(lvl) ? xs.filter((x) => x !== lvl) : [...xs, lvl])}
-                  />
-                  {t(`test_level.${lvl}`)}
-                </label>
-              ))}
-            </div>
-          </div>
-          <Field name="assigneeId" label={t("runs.default_assignee")} error={form.formState.errors.assigneeId?.message}>
-            <select className="input" {...form.register("assigneeId")}>
-              <option value="">{t("common.unassigned")}</option>
-              {users.map((u: { id: string; name: string }) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </select>
-          </Field>
-          <Field name="description" label={t("common.description")} error={form.formState.errors.description?.message}>
-            <textarea className="input" rows={2} {...form.register("description")} />
-          </Field>
-          {project && (
-            <div className="space-y-1">
-              <label className="label">{t("runs.include_cases")}</label>
-              <div
-                className={`flex items-center gap-3 border rounded p-2 ${suiteError ? "border-red-400" : "border-slate-200 dark:border-slate-700"}`}
-                aria-invalid={suiteError ? true : undefined}
-                aria-describedby={suiteError ? "suites-error" : undefined}
-              >
-                <button type="button" className="btn-secondary" onClick={() => setPickerOpen(true)}>
-                  <ListChecks size={16} /> {t("runs.picker.open")}
-                </button>
-                <span className="flex-1 text-sm text-slate-600 dark:text-slate-300">
-                  {t("runs.picker.selected_count", { count: selectedCaseIds.length })}
-                </span>
-                {selectedCaseIds.length > 0 && (
-                  <button
-                    type="button"
-                    className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                    aria-label={t("runs.picker.clear")}
-                    title={t("runs.picker.clear")}
-                    onClick={() => setSelectedCaseIds([])}
-                  >
-                    <X size={16} />
-                  </button>
-                )}
-              </div>
-              {suiteError && <p id="suites-error" role="alert" className="text-xs text-red-600">{suiteError}</p>}
-            </div>
-          )}
-          {pickerOpen && projectId && (
-            <CasePickerModal
-              projectId={projectId}
-              initialSelected={selectedCaseIds}
-              onCancel={() => setPickerOpen(false)}
-              onDone={(ids) => {
-                setSelectedCaseIds(ids);
-                setPickerOpen(false);
-                if (ids.length && suiteError) setSuiteError(null);
-                logger.info("run cases picked", { projectId, count: ids.length });
-              }}
-            />
-          )}
-          {submitError && <div role="alert" className="text-sm text-red-600">{submitError}</div>}
-          <div className="flex gap-2 justify-end">
-            <button type="button" className="btn-secondary" onClick={closeForm}>{t("common.cancel")}</button>
-            <button type="submit" className="btn-primary" disabled={create.isPending}>
-              {create.isPending ? t("common.please_wait") : t("common.create")}
-            </button>
-          </div>
-        </form>
+        <NewRunModal defaultProjectId={projectIdFilter} onClose={() => setOpen(false)} />
       )}
 
       {runs.length === 0 ? (

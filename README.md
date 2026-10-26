@@ -8,7 +8,7 @@ A self-hosted test management platform for manual functional QA. Organise projec
 - **Shared / reusable steps** — a per-project library of named steps; insert one into any case from the step editor.
 - **Rich-text editor** — WYSIWYG (TipTap) with a toolbar (bold, italic, inline code, bullet/numbered lists, links, undo/redo) on the fields where formatting actually helps forensic detail: step action/expected, preconditions, shared-step library entries, and — on execution detail — *Actual result* and *Why it failed*. Stored and rendered as Markdown, so plain-text content round-trips and existing rows stay readable. Link URLs are restricted to `http(s)`/`mailto`/`tel` — `javascript:` and other schemes are blocked at both insert and render time.
 - **Webhooks** — configure outbound HTTP webhooks per project on events (`run.created`, `run.completed`, `run.archived`, `execution.failed`, `execution.passed`, `execution_result.failed`, `execution_result.passed`, `jira.bug_created`). Optional HMAC-SHA256 signing, delivery log, test-fire button.
-- **Case picker for runs** — a new run's cases are picked Qase-style: a suite tree with "selected / total" counts per suite (sub-suites included), the active suite's cases and sub-suites side by side, and a search across every case title. Pick whole suites, a few sub-suites, or single cases.
+- **Qase-style run creation** — **New run** opens a dialog laid out like Qase's (project and name, description, environment and milestone, assignee and due date, platform / connectivity / locale configurations, test cases). Cases are picked in a suite tree with "selected / total" counts per suite (sub-suites included), the active suite's cases and sub-suites side by side, a search across every case title, and **Add filter** by priority, test level or tag. Pick whole suites, a few sub-suites, or single cases.
 - **Kanban run view** — toggle between list and kanban on the Runs page; managers drag cards between columns to change a run's status.
 - **Archive runs** — managers can archive a test run to remove it from the active list. An **Archived** tab on the Runs page shows all archived runs; managers can restore them back to active.
 - **Evidence storage** — upload screenshots, videos and logs against cases or executions.
@@ -326,9 +326,11 @@ The Coverage Matrix picks up a new dimension: select **Requirement** on the Matr
 
 ## Choosing a run's test cases
 
-On **Runs → New run**, pick the project, then **Select cases**. The picker shows the project's suite tree on the left; each suite's checkbox covers every case under it, sub-suites included, and its `selected/total` count does too. Click a suite to see its own cases and its sub-suites on the right, where single cases or whole sub-suites can be ticked. The search box filters every case title across the project. **Done** keeps the selection; the form shows how many cases are picked. The level filter on the form still applies: with levels ticked, only picked cases of those levels go into the run.
+On **Runs → New run**, a dialog asks for the project and a name (prefilled as `Test run YYYY/MM/DD`), an optional description, the environment, milestone, default assignee and due date, and the **Configurations**: the platforms, connectivities and locales to run on (each case is executed once per combination). Under **Test cases**, **Select cases** opens the picker.
 
-Over the API, `POST /runs` takes `caseIds`, `suiteIds` or both. A suite id brings all cases of that suite and its sub-suites. Ids that are not in the run's project are rejected with `RUN_CASES_NOT_IN_PROJECT` / `RUN_SUITES_NOT_IN_PROJECT`. `GET /projects/:id/case-tree` returns the project's suites (`id`, `parentId`, `name`) and cases (`id`, `suiteId`, `title`, `priority`, `testLevel`) that the picker is built from.
+The picker shows the project's suite tree on the left; each suite's checkbox covers every case under it, sub-suites included, and its `selected/total` count does too. Click a suite to see its own cases and its sub-suites on the right, where single cases or whole sub-suites can be ticked; each case shows its priority as an icon. The search box filters every case title across the project, and **Add filter** narrows the list by priority, test level or tag (any chosen value within a field, every field). Search and filters only change what is shown: every ticked case goes into the run, and the header keeps counting against the whole project. **Done** keeps the selection and **Start run** creates the run.
+
+Over the API, `POST /runs` takes `caseIds`, `suiteIds` or both. A suite id brings all cases of that suite and its sub-suites. Ids that are not in the run's project are rejected with `RUN_CASES_NOT_IN_PROJECT` / `RUN_SUITES_NOT_IN_PROJECT`. `GET /projects/:id/case-tree` returns the project's suites (`id`, `parentId`, `name`) and cases (`id`, `suiteId`, `title`, `priority`, `testLevel`, `tags`) that the picker is built from.
 
 ## Importing test cases from Excel
 
@@ -501,7 +503,8 @@ frontend/
     components/        Layout (collapsible, company header), Comments,
                        ActivityFeed, LanguageSwitcher, PasswordInput,
                        CustomFieldsEditor, SharedStepsEditor, WebhooksEditor,
-                       CasePickerModal (choose a run's cases)
+                       NewRunModal + CasePickerModal (create a run, pick its
+                       cases), PriorityIcon, ui/MultiSelect
     pages/             Login, VerifyEmail, Dashboard, Projects, ProjectDetail,
                        CompanySettings (company Jira creds + templates),
                        ProjectSettings (tabbed: Jira / custom fields /

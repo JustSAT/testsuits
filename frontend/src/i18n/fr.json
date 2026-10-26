@@ -36,7 +36,9 @@
     "save_failed": "Échec de l'enregistrement",
     "invite_failed": "Échec de l'invitation",
     "system": "Système",
-    "unlink": "Délier"
+    "unlink": "Délier",
+    "no_results": "Aucun résultat",
+    "clear_selection": "Effacer la sélection"
   },
   "notfound": {
     "title": "Page introuvable",
@@ -462,8 +464,18 @@
       "no_matches": "Aucun cas ne correspond à votre recherche.",
       "empty_suite": "Aucun cas de test dans cette suite.",
       "no_cases": "Ce projet n'a pas encore de cas de test.",
-      "done": "Terminé"
-    }
+      "done": "Terminé",
+      "add_filter": "Ajouter un filtre",
+      "tags": "Tags"
+    },
+    "new_test_run": "Nouvelle exécution de test",
+    "default_name": "Exécution {{date}}",
+    "description_placeholder": "Par exemple : se connecter sur la version de recette avec un compte de test",
+    "not_set": "Non défini",
+    "configurations": "Configurations",
+    "configurations_hint": "Chaque cas est exécuté une fois par combinaison des valeurs choisies ici.",
+    "from_repository": "Depuis le référentiel",
+    "start_run": "Lancer l'exécution"
   },
   "milestones": {
     "title": "Jalons",
@@ -753,7 +765,6 @@
   },
   "test_level": {
     "label": "Niveau de test",
-    "filter_by": "Filtrer par niveau",
     "SMOKE": "Smoke",
     "SANITY": "Sanity",
     "REGRESSION": "Régression",

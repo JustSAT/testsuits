@@ -36,7 +36,9 @@
     "save_failed": "Save failed",
     "invite_failed": "Invite failed",
     "system": "System",
-    "unlink": "Unlink"
+    "unlink": "Unlink",
+    "no_results": "No results",
+    "clear_selection": "Clear selection"
   },
   "notfound": {
     "title": "Page not found",
@@ -443,8 +445,18 @@
       "no_matches": "No cases match your search.",
       "empty_suite": "No test cases in this suite.",
       "no_cases": "This project has no test cases yet.",
-      "done": "Done"
-    }
+      "done": "Done",
+      "add_filter": "Add filter",
+      "tags": "Tags"
+    },
+    "new_test_run": "New test run",
+    "default_name": "Test run {{date}}",
+    "description_placeholder": "For example: sign in on the staging build with a test account",
+    "not_set": "Not set",
+    "configurations": "Configurations",
+    "configurations_hint": "Each case is executed once per combination of the values picked here.",
+    "from_repository": "From repository",
+    "start_run": "Start run"
   },
   "milestones": {
     "title": "Milestones",
@@ -753,7 +765,6 @@
   },
   "test_level": {
     "label": "Test level",
-    "filter_by": "Filter by level",
     "SMOKE": "Smoke",
     "SANITY": "Sanity",
     "REGRESSION": "Regression",
