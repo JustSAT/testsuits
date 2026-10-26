@@ -20,16 +20,26 @@ companiesRouter.get("/current", async (req: AuthedRequest, res, next) => {
   }
 });
 
-const updateSchema = z.object({ name: z.string().min(1) });
+// The logo is a small image kept inline as a data URL (no object storage).
+const MAX_LOGO_CHARS = 400_000;
+const updateSchema = z.object({
+  name: z.string().trim().min(1).optional(),
+  logo: z
+    .string()
+    .max(MAX_LOGO_CHARS)
+    .regex(/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/, "PNG, JPEG, WebP or GIF data URL")
+    .nullable()
+    .optional(),
+});
 
 companiesRouter.patch("/current", requireManager, async (req: AuthedRequest, res, next) => {
   try {
     const data = updateSchema.parse(req.body);
     const company = await prisma.company.update({
       where: { id: req.user!.companyId },
-      data: { name: data.name },
+      data,
     });
-    logger.info({ companyId: company.id, updatedBy: req.user!.id }, "company updated");
+    logger.info({ companyId: company.id, updatedBy: req.user!.id, fields: Object.keys(data) }, "company updated");
     res.json(company);
   } catch (e) {
     next(e);

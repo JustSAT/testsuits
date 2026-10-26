@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Plus, List, LayoutGrid, Archive, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -22,7 +22,8 @@ export function Runs() {
   const isManager = user?.role === "MANAGER" || user?.role === "ADMIN";
   const view = params.get("view") === "kanban" ? "kanban" : "list";
   const tab = params.get("tab") === "archived" ? "archived" : "active";
-  const projectIdFilter = params.get("projectId") ?? "";
+  // Runs belong to the current project (Qase style): it comes from the URL.
+  const { id: projectId = "" } = useParams();
   const milestoneIdFilter = params.get("milestoneId") ?? "";
   const qc = useQueryClient();
   const confirmDialog = useConfirm();
@@ -30,7 +31,7 @@ export function Runs() {
   const [open, setOpen] = useState(false);
 
   const runsParams: Record<string, string> = {};
-  if (projectIdFilter) runsParams.projectId = projectIdFilter;
+  runsParams.projectId = projectId;
   if (milestoneIdFilter) runsParams.milestoneId = milestoneIdFilter;
   if (tab === "archived") runsParams.archived = "true";
 
@@ -159,7 +160,7 @@ export function Runs() {
       </header>
 
       {open && tab === "active" && (
-        <NewRunModal defaultProjectId={projectIdFilter} onClose={() => setOpen(false)} />
+        <NewRunModal projectId={projectId} onClose={() => setOpen(false)} />
       )}
 
       {runs.length === 0 ? (
@@ -175,7 +176,6 @@ export function Runs() {
               <Link to={`/runs/${r.id}`} className="flex-1 min-w-0 hover:underline">
                 <div className="font-medium">{r.name}</div>
                 <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
-                  <span>{r.project.name}</span>
                   {r.milestone && <Badge tone="violet">{r.milestone.name}</Badge>}
                   {r.environment && <Badge tone="neutral">{r.environment}</Badge>}
                   <span>{t("runs.cases_count", { count: r._count.executions })}</span>
@@ -205,7 +205,6 @@ export function Runs() {
               <Link to={`/runs/${r.id}`} className="flex-1 min-w-0">
                 <div className="font-medium">{r.name}</div>
                 <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
-                  <span>{r.project.name}</span>
                   {r.milestone && <Badge tone="violet">{r.milestone.name}</Badge>}
                   {r.platforms?.map((p) => <Badge key={p} tone="info">{platformLabel(p)}</Badge>)}
                   {r.connectivities?.map((c) => <Badge key={c} tone="success">{connectivityLabel(c)}</Badge>)}
@@ -268,8 +267,7 @@ export function Runs() {
                       >
                         <div className="font-medium truncate">{r.name}</div>
                         <div className="text-xs text-slate-500 mt-1 flex items-center gap-1 flex-wrap">
-                          <span>{r.project.name}</span>
-                          {r.milestone && <Badge tone="violet" size="xs">{r.milestone.name}</Badge>}
+                                  {r.milestone && <Badge tone="violet" size="xs">{r.milestone.name}</Badge>}
                           <span>· {t("runs.cases_count", { count: r._count.executions })}</span>
                         </div>
                       </Link>

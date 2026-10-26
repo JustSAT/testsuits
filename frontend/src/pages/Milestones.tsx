@@ -155,7 +155,7 @@ export function Milestones() {
           {milestones.map((m: any) => (
             <div key={m.id} className="flex items-center justify-between px-5 py-3">
               <div className="flex-1">
-                <Link to={`/runs?projectId=${id}&milestoneId=${m.id}`} className="font-medium hover:underline">{m.name}</Link>
+                <Link to={`/projects/${id}/runs?milestoneId=${m.id}`} className="font-medium hover:underline">{m.name}</Link>
                 <div className="text-xs text-slate-500">
                   {t("milestones.runs_count", { count: m._count.runs })}
                   {m.dueDate && ` · ${t("milestones.due_on", { date: new Date(m.dueDate).toLocaleDateString() })}`}

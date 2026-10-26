@@ -198,7 +198,42 @@ export async function buildCaseTemplate(): Promise<Buffer> {
   info.getColumn("help").alignment = { wrapText: true, vertical: "top" };
 
   const buffer = await wb.xlsx.writeBuffer();
-  return Buffer.from(buffer);
+  return pinZipTimestamps(Buffer.from(buffer));
+}
+
+/**
+ * ExcelJS zips the workbook with JSZip, which stamps every entry with the
+ * current time, so two builds a second apart differ byte for byte. Rewrite
+ * each entry's DOS time/date — in its local header and in the central
+ * directory — to 1980-01-01 00:00 (the zip epoch) so the template is stable.
+ */
+function pinZipTimestamps(buf: Buffer): Buffer {
+  const EOCD_SIG = 0x06054b50;
+  const CENTRAL_SIG = 0x02014b50;
+  const LOCAL_SIG = 0x04034b50;
+  const DOS_TIME = 0;
+  const DOS_DATE = (0 << 9) | (1 << 5) | 1; // 1980-01-01
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 22 - 0xffff); i--) {
+    if (buf.readUInt32LE(i) === EOCD_SIG) {
+      eocd = i;
+      break;
+    }
+  }
+  if (eocd === -1) return buf;
+  const count = buf.readUInt16LE(eocd + 10);
+  let p = buf.readUInt32LE(eocd + 16);
+  for (let n = 0; n < count && p + 46 <= buf.length && buf.readUInt32LE(p) === CENTRAL_SIG; n++) {
+    buf.writeUInt16LE(DOS_TIME, p + 12);
+    buf.writeUInt16LE(DOS_DATE, p + 14);
+    const local = buf.readUInt32LE(p + 42);
+    if (local + 30 <= buf.length && buf.readUInt32LE(local) === LOCAL_SIG) {
+      buf.writeUInt16LE(DOS_TIME, local + 10);
+      buf.writeUInt16LE(DOS_DATE, local + 12);
+    }
+    p += 46 + buf.readUInt16LE(p + 28) + buf.readUInt16LE(p + 30) + buf.readUInt16LE(p + 32);
+  }
+  return buf;
 }
 
 // ---------------------------------------------------------------------------

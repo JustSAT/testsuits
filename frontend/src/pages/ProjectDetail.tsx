@@ -13,15 +13,11 @@ import {
   FileDown,
   FileSpreadsheet,
   FileUp,
-  Flag,
   Folder,
   FolderOpen,
   FolderPlus,
-  ListChecks,
   Pencil,
-  Play,
   Plus,
-  Settings,
   Trash2,
 } from "lucide-react";
 import { api } from "../lib/api";
@@ -184,14 +180,10 @@ export function ProjectDetail() {
   ];
 
   const projectMenu: ActionMenuItem[] = [
-    { key: "runs", icon: <Play size={15} />, label: t("projects.test_runs"), onSelect: () => navigate(`/runs?projectId=${project.id}`) },
-    { key: "ms", icon: <Flag size={15} />, label: t("projects.milestones"), onSelect: () => navigate(`/projects/${project.id}/milestones`) },
-    { key: "req", icon: <ListChecks size={15} />, label: t("requirements.title"), onSelect: () => navigate(`/projects/${project.id}/requirements`) },
     ...(isManager
       ? [
           { key: "imp", icon: <FileSpreadsheet size={15} />, label: t("import.button"), onSelect: () => navigate(`/projects/${project.id}/import`) },
           { key: "qase-in", icon: <FileUp size={15} />, label: t("qase.import_title"), onSelect: () => setDialog({ kind: "qase" }) },
-          { key: "set", icon: <Settings size={15} />, label: t("projects.settings"), onSelect: () => navigate(`/projects/${project.id}/settings`) },
         ]
       : []),
     {

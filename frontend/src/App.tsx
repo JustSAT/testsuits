@@ -29,6 +29,8 @@ import { Requirements } from "./pages/Requirements";
 import { ImportCases } from "./pages/ImportCases";
 import { Profile } from "./pages/Profile";
 import { VerifyEmail } from "./pages/VerifyEmail";
+import { Environments } from "./pages/Environments";
+import { ProjectRedirect } from "./components/ProjectRedirect";
 
 function Protected({ children }: { children: React.ReactNode }) {
   const user = useAuth((s) => s.user);
@@ -68,18 +70,22 @@ export function App() {
       <Route path="/reset/:token" element={<ResetPassword />} />
       <Route path="/invite/:token" element={<AcceptInvite />} />
       <Route path="/verify-email/:token" element={<VerifyEmail />} />
-      <Route path="/" element={<Protected><Dashboard /></Protected>} />
+      <Route path="/" element={<Protected><ProjectRedirect page="dashboard" /></Protected>} />
       <Route path="/projects" element={<Protected><Projects /></Protected>} />
       <Route path="/projects/:id" element={<Protected><ProjectDetail /></Protected>} />
+      <Route path="/projects/:id/dashboard" element={<Protected><Dashboard /></Protected>} />
+      <Route path="/projects/:id/runs" element={<Protected><Runs /></Protected>} />
+      <Route path="/projects/:id/matrix" element={<Protected><Matrix /></Protected>} />
+      <Route path="/projects/:id/environments" element={<Protected><Environments /></Protected>} />
       <Route path="/projects/:id/milestones" element={<Protected><Milestones /></Protected>} />
       <Route path="/projects/:id/settings" element={<Protected><ProjectSettings /></Protected>} />
       <Route path="/projects/:id/requirements" element={<Protected><Requirements /></Protected>} />
       <Route path="/projects/:id/import" element={<Protected><ImportCases /></Protected>} />
       <Route path="/suites/:id" element={<Protected><SuiteDetail /></Protected>} />
       <Route path="/cases/:id" element={<Protected><CaseDetail /></Protected>} />
-      <Route path="/runs" element={<Protected><Runs /></Protected>} />
+      <Route path="/runs" element={<Protected><ProjectRedirect page="runs" /></Protected>} />
       <Route path="/runs/:id" element={<Protected><RunDetail /></Protected>} />
-      <Route path="/matrix" element={<Protected><Matrix /></Protected>} />
+      <Route path="/matrix" element={<Protected><ProjectRedirect page="matrix" /></Protected>} />
       <Route path="/team" element={<Protected><Team /></Protected>} />
       <Route path="/tokens" element={<Protected><Tokens /></Protected>} />
       <Route path="/company" element={<Protected><CompanySettings /></Protected>} />

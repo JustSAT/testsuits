@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import ExcelJS from "exceljs";
 import { deflateRawSync } from "zlib";
 import {
@@ -66,6 +66,19 @@ describe("buildCaseTemplate", () => {
   it("is byte-stable across builds so the download can be cached", async () => {
     const [a, b] = await Promise.all([buildCaseTemplate(), buildCaseTemplate()]);
     expect(a.equals(b)).toBe(true);
+  });
+
+  it("stays byte-stable when built at different times (zip entries carry no clock)", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(new Date("2026-01-01T10:00:00Z"));
+      const a = await buildCaseTemplate();
+      vi.setSystemTime(new Date("2026-06-15T18:47:13Z"));
+      const b = await buildCaseTemplate();
+      expect(a.equals(b)).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

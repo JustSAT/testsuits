@@ -81,6 +81,9 @@ model Company {
   id            String              @id @default(cuid())
   name          String
   slug          String              @unique
+  // Small image shown as the company's avatar, stored inline as a data URL
+  // (no object storage needed); null = initials.
+  logo          String?
   createdAt     DateTime            @default(now())
   users         User[]
   projects      Project[]
@@ -261,6 +264,7 @@ model Project {
   sharedSteps           SharedStep[]
   webhooks              Webhook[]
   requirementItems      Requirement[]
+  environments          Environment[]
 
   @@unique([companyId, key])
 }
@@ -388,6 +392,30 @@ model TestCaseRevision {
   @@index([caseId, createdAt])
 }
 
+// Where a project is tested (Qase's Environments): picked from a list when a
+// run is created. DYNAMIC matches hosts by pattern (feature branches, preview
+// builds); STATIC points at one URL (staging, production).
+model Environment {
+  id          String          @id @default(cuid())
+  projectId   String
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  slug        String
+  description String?
+  type        EnvironmentType @default(DYNAMIC)
+  host        String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  runs        TestRun[]
+
+  @@unique([projectId, slug])
+}
+
+enum EnvironmentType {
+  DYNAMIC
+  STATIC
+}
+
 model TestRun {
   id             String          @id @default(cuid())
   projectId      String
@@ -396,6 +424,10 @@ model TestRun {
   milestone      Milestone?      @relation(fields: [milestoneId], references: [id])
   name           String
   description    String?
+  // The project environment the run is on. `environment` keeps its title (and
+  // the free text of runs made before environments existed) for display.
+  environmentId  String?
+  env            Environment?    @relation(fields: [environmentId], references: [id], onDelete: SetNull)
   environment    String?
   // Stores whatever codes the caller selected (e.g. "WEB", "WINDOWS", or a
   // company-custom value like "LINUX"). Validated at write time against the

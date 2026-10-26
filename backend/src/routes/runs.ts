@@ -17,7 +17,9 @@ const createSchema = z.object({
   milestoneId: z.string().optional().nullable(),
   name: z.string().trim().min(1, "Run name is required"),
   description: z.string().optional().nullable(),
-  environment: z.string().trim().min(1, "Environment is required"),
+  // Pick one of the project's environments; free text is kept for older clients.
+  environmentId: z.string().optional().nullable(),
+  environment: z.string().trim().optional().nullable(),
   // Platforms / connectivities / locales are free-form strings validated
   // against the caller's TestConfigOption rows — not against a Prisma enum,
   // so each company can add its own values.
@@ -124,6 +126,16 @@ runsRouter.post("/", requireWrite, async (req: AuthedRequest, res, next) => {
     }
     if (caseIds.size === 0) throw httpError(400, "RUN_REQUIRES_CASES");
 
+    let environment = data.environment || null;
+    if (data.environmentId) {
+      const env = await prisma.environment.findFirst({ where: { id: data.environmentId, projectId: project.id }, select: { title: true } });
+      if (!env) {
+        req.log.warn({ projectId: project.id, environmentId: data.environmentId, userId: req.user!.id }, "run create: environment outside project");
+        throw httpError(400, "ENVIRONMENT_NOT_IN_PROJECT");
+      }
+      environment = env.title;
+    }
+
     if (data.assigneeId) {
       const assignee = await prisma.user.findFirst({
         where: { id: data.assigneeId, companyId: req.user!.companyId },
@@ -151,7 +163,8 @@ runsRouter.post("/", requireWrite, async (req: AuthedRequest, res, next) => {
         milestoneId: data.milestoneId ?? null,
         name: data.name,
         description: data.description,
-        environment: data.environment,
+        environmentId: data.environmentId ?? null,
+        environment,
         platforms: data.platforms ?? [],
         connectivities: data.connectivities ?? [],
         locales: data.locales ?? [],

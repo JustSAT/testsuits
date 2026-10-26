@@ -63,12 +63,13 @@ describe("errorHandler", () => {
     expect(log.error).not.toHaveBeenCalled();
   });
 
-  it("returns a 500 for an Error without a status and logs as error", () => {
+  it("returns a 500 for an Error without a status, without leaking its message, and logs as error", () => {
     const { req, log } = mockReq();
     const res = mockRes();
     errorHandler(new Error("boom"), req, res, vi.fn());
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: "boom" });
+    // Raw exception text (Prisma, drivers, SDKs) never reaches the client.
+    expect(res.json).toHaveBeenCalledWith({ error: "INTERNAL_SERVER_ERROR" });
     expect(log.error).toHaveBeenCalled();
     expect(log.warn).not.toHaveBeenCalled();
   });

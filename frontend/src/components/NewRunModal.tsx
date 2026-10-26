@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ListChecks, X } from "lucide-react";
@@ -17,10 +18,9 @@ import { MultiSelect } from "./ui/MultiSelect";
 import { CasePickerModal } from "./CasePickerModal";
 
 const schema = z.object({
-  projectId: nonEmpty("Project"),
   name: nonEmpty("Run name"),
   milestoneId: z.string().optional(),
-  environment: nonEmpty("Environment"),
+  environmentId: z.string().optional(),
   dueDate: z.string().optional(),
   description: z.string().optional(),
   assigneeId: z.string().optional(),
@@ -34,7 +34,8 @@ function todayStamp(d = new Date()) {
 }
 
 type Props = {
-  defaultProjectId: string;
+  /** The current project: runs are created inside it, Qase style. */
+  projectId: string;
   onClose: () => void;
 };
 
@@ -44,7 +45,7 @@ type Props = {
  * (platform / connectivity / locale combinations) and the test cases, picked
  * from the repository in CasePickerModal.
  */
-export function NewRunModal({ defaultProjectId, onClose }: Props) {
+export function NewRunModal({ projectId, onClose }: Props) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const user = useAuth((s) => s.user);
@@ -60,23 +61,14 @@ export function NewRunModal({ defaultProjectId, onClose }: Props) {
 
   const form = useZodForm<Values>(schema, {
     defaultValues: {
-      projectId: defaultProjectId,
       name: t("runs.default_name", { date: todayStamp() }),
       milestoneId: "",
-      environment: "",
+      environmentId: "",
       dueDate: "",
       description: "",
       assigneeId: !isManager && user?.id ? user.id : "",
     },
   });
-  const projectId = form.watch("projectId");
-
-  // Picked cases and the milestone belong to one project; switching starts over.
-  useEffect(() => {
-    setCaseIds([]);
-    form.setValue("milestoneId", "");
-  }, [projectId]); // only on a project change: `form` is not a stable dependency
-
   // Esc closes the dialog unless the case picker on top of it is open.
   useEffect(() => {
     if (pickerOpen) return;
@@ -87,15 +79,10 @@ export function NewRunModal({ defaultProjectId, onClose }: Props) {
     return () => document.removeEventListener("keydown", onKey);
   }, [pickerOpen, onClose]);
 
-  const { data: projects = [] } = useQuery({
-    queryKey: ["projects"],
-    queryFn: async () => (await api.get("/projects")).data,
+  const { data: environments = [] } = useQuery<{ id: string; title: string; slug: string }[]>({
+    queryKey: ["environments", projectId],
+    queryFn: async () => (await api.get("/environments", { params: { projectId } })).data,
   });
-  // The <select> drops a value it has no option for yet, so re-apply the
-  // default project once the list has loaded.
-  useEffect(() => {
-    if (defaultProjectId && projects.length) form.setValue("projectId", defaultProjectId);
-  }, [projects, defaultProjectId]); // `form` is not a stable dependency
   const { data: milestones = [] } = useQuery({
     queryKey: ["milestones", projectId],
     queryFn: async () => (await api.get("/milestones", { params: { projectId } })).data,
@@ -112,11 +99,11 @@ export function NewRunModal({ defaultProjectId, onClose }: Props) {
   const create = useMutation({
     mutationFn: async (values: Values) =>
       (await api.post("/runs", {
-        projectId: values.projectId,
+        projectId,
         milestoneId: values.milestoneId || null,
         name: values.name,
         description: values.description || null,
-        environment: values.environment,
+        environmentId: values.environmentId || null,
         platforms: platforms.length ? platforms : undefined,
         connectivities: connectivities.length ? connectivities : undefined,
         locales: locales.length ? locales : undefined,
@@ -168,30 +155,30 @@ export function NewRunModal({ defaultProjectId, onClose }: Props) {
           </button>
         </header>
 
-        <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3">
-          <Field name="projectId" label={t("runs.project")} error={errors.projectId?.message}>
-            <select className="input" {...form.register("projectId")}>
-              <option value="">{t("runs.select_project")}</option>
-              {projects.map((p: { id: string; name: string }) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </Field>
-          <Field name="name" label={t("runs.run_name")} error={errors.name?.message}>
-            <input className="input" {...form.register("name")} />
-          </Field>
-        </div>
+        <Field name="name" label={t("runs.run_name")} error={errors.name?.message}>
+          <input className="input" {...form.register("name")} />
+        </Field>
 
         <Field name="description" label={t("common.description")} error={errors.description?.message}>
           <input className="input" placeholder={t("runs.description_placeholder")} {...form.register("description")} />
         </Field>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field name="environment" label={t("runs.environment")} error={errors.environment?.message}>
-            <input className="input" placeholder={t("runs.environment_placeholder")} {...form.register("environment")} />
+          <Field name="environmentId" label={t("runs.environment")} error={errors.environmentId?.message}>
+            <select className="input" {...form.register("environmentId")}>
+              <option value="">{t("runs.not_set")}</option>
+              {environments.map((e) => (
+                <option key={e.id} value={e.id}>{e.title}</option>
+              ))}
+            </select>
+            {environments.length === 0 && (
+              <Link to={`/projects/${projectId}/environments`} className="mt-1 inline-block text-xs text-brand-600 hover:underline dark:text-brand-300" onClick={onClose}>
+                {t("environments.none_yet_link")}
+              </Link>
+            )}
           </Field>
           <Field name="milestoneId" label={t("runs.milestone")} error={errors.milestoneId?.message}>
-            <select className="input" disabled={!projectId} {...form.register("milestoneId")}>
+            <select className="input" {...form.register("milestoneId")}>
               <option value="">{t("runs.not_set")}</option>
               {milestones.map((m: { id: string; name: string }) => (
                 <option key={m.id} value={m.id}>{m.name}</option>
@@ -256,8 +243,6 @@ export function NewRunModal({ defaultProjectId, onClose }: Props) {
             <button
               type="button"
               className="btn-secondary"
-              disabled={!projectId}
-              title={projectId ? undefined : t("runs.validation.project_required")}
               onClick={() => setPickerOpen(true)}
             >
               <ListChecks size={16} /> {t("runs.picker.open")}
@@ -289,7 +274,7 @@ export function NewRunModal({ defaultProjectId, onClose }: Props) {
         </footer>
       </form>
 
-      {pickerOpen && projectId && (
+      {pickerOpen && (
         <CasePickerModal
           projectId={projectId}
           initialSelected={caseIds}

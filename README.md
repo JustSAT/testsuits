@@ -30,7 +30,10 @@ A self-hosted test management platform for manual functional QA. Organise projec
 - **SAML SSO — scaffolding only, not production-ready.** The per-company config UI and routes are in place, but `/saml/:slug/login` returns `501` and `/saml/:slug/acs` deliberately rejects requests until a real assertion parser is wired up (see comments in `backend/src/routes/saml.ts` for the exact steps — install `@node-saml/node-saml` and verify against `cfg.x509Cert`). Do not expose these routes to the public internet as-is.
 - **Audit log** — `/api/audit` surfaces the tenant-wide activity stream with user/action/date filters and CSV export for compliance reviews.
 - **Test case versioning** — every `PATCH /cases/:id` snapshots the prior state to `TestCaseRevision` and `GET /cases/:id/revisions` returns the full audit trail. The case panel's **History** tab lists every edit with its author, time and each changed field before → after.
-- **Executive dashboard** — stat tiles, 30-day execution & pass-rate trend, release-readiness per milestone, defect aging buckets, top failing cases.
+- **Project workspace (Qase style)** — the sidebar lists the company's projects; the open project expands into its Dashboard, Repository, Test runs, Environments, Milestones, Requirements, Coverage matrix and Settings. Everything inside works on that project, so nothing asks for a project again; `/`, `/runs` and `/matrix` open the last project used.
+- **Environments** — each project keeps its environments (title, unique slug, description, Dynamic host pattern or Static URL), shown as cards with their run count; a new run picks its environment from that list.
+- **Executive dashboard** — per project: stat tiles, 30-day execution & pass-rate trend, release-readiness per milestone, defect aging buckets, top failing cases.
+- **Company profile** — managers rename the company and give it a logo (stored inline, no object storage needed), shown in the sidebar.
 - **i18n** — English and French built in with a language switcher; sidebar collapses for more canvas. All API error, warning, and info messages are returned as stable `UPPER_SNAKE_CASE` machine keys (e.g. `INVALID_CREDENTIALS`, `PROJECT_NOT_FOUND`); the frontend translates them via `t('errors.' + key)`. Validation messages, placeholders, and aria-labels are also served from the language files — no hardcoded English in `.tsx` files or API responses.
 - **Dark mode** — light by default. Toggle in the sidebar; the choice is saved in `localStorage` and applied pre-hydration so there's no flash on refresh. Toasts and the TipTap editor follow the theme automatically.
 
@@ -348,6 +351,12 @@ The picker shows the project's suite tree on the left; each suite's checkbox cov
 
 Over the API, `POST /runs` takes `caseIds`, `suiteIds` or both. A suite id brings all cases of that suite and its sub-suites. Ids that are not in the run's project are rejected with `RUN_CASES_NOT_IN_PROJECT` / `RUN_SUITES_NOT_IN_PROJECT`. `GET /projects/:id/case-tree` returns the project's suites (`id`, `parentId`, `name`, `description`) and cases (`id`, `suiteId`, `title`, `priority`, `testLevel`, `tags`) that the picker is built from.
 
+## Projects, environments and runs
+
+Open a project from the sidebar: it expands into the project's pages (Dashboard, Repository, Test runs, Environments, Milestones, Requirements, Coverage matrix, Settings for managers), and every one of them works on that project — runs are created in it, the dashboard and the matrix count only it. The last project opened is remembered, so `/`, `/runs` and `/matrix` land back in it.
+
+**Environments** lists the project's environments as cards (type, title, slug, host, run count and last run). **New environment** asks for a title, a slug (suggested from the title; lowercase letters, digits and dashes, unique in the project), a description and the type: *Dynamic* matches hosts by pattern (e.g. `*.feature.company.com`, for feature branches and preview builds), *Static* points at one URL (staging, production). Managers edit or delete an environment from its card menu; deleting it leaves its runs with the environment's name. **New run** picks the environment from the project's list (or *Not set*).
+
 ## Working with a test case
 
 Click a case in the repository to open it in the side panel (the URL keeps `?case=<id>`, so the view can be shared; old `/cases/:id` links land there too). The header shows its title and suite path, with **Edit**, **Clone** and **Delete** for managers.
@@ -447,7 +456,7 @@ This makes concurrent *imports* safe without a schema migration. It does not ser
 ## Domain model
 
 ```
-Company
+Company (name, slug, logo — inline image data URL)
   ├── Users (MANAGER / TESTER)
   │     ├── emailVerifiedAt, totpSecret, totpEnabledAt, isLocked, lastLoginAt
   │     ├── owned TestRuns
@@ -476,10 +485,14 @@ Company
         │           ├── tags, priority, testLevel
         │           ├── Attachments
         │           └── Comments
+        ├── Environments (title, slug unique per project, description,
+        │                 type DYNAMIC/STATIC, host — pattern or URL)
         └── TestRuns
               ├── Milestone (optional)
               ├── status (PENDING/IN_PROGRESS/COMPLETED/ARCHIVED)
-              ├── environment, platforms[], connectivities[], locale, dueDate
+              ├── Environment (optional; `environment` keeps its title, and the free
+              │                text of runs made before environments existed)
+              ├── platforms[], connectivities[], locale, dueDate
               └── TestExecutions
                     ├── status (aggregate — rolls up child TestExecutionResults)
                     ├── failureReason / actualResult (legacy runs only; per-combo runs use results[])
@@ -493,7 +506,7 @@ Company
                           └── jiraIssueKey / jiraIssueUrl (one bug per failing combo)
 ```
 
-Enums: `Role` (`MANAGER`, `TESTER`), `RunStatus` (`PENDING`/`IN_PROGRESS`/`COMPLETED`/`ARCHIVED`), `Priority` (`LOW`/`MEDIUM`/`HIGH`/`CRITICAL`), `TestLevel` (`SMOKE`/`SANITY`/`REGRESSION`/`ADVANCED`/`EXPLORATORY`), `Platform` (`WEB`/`WINDOWS`/`MACOS`/`ANDROID`/`IOS`), `Connectivity` (`ONLINE`/`OFFLINE`).
+Enums: `Role` (`MANAGER`, `TESTER`), `RunStatus` (`PENDING`/`IN_PROGRESS`/`COMPLETED`/`ARCHIVED`), `Priority` (`LOW`/`MEDIUM`/`HIGH`/`CRITICAL`), `TestLevel` (`SMOKE`/`SANITY`/`REGRESSION`/`ADVANCED`/`EXPLORATORY`), `Platform` (`WEB`/`WINDOWS`/`MACOS`/`ANDROID`/`IOS`), `Connectivity` (`ONLINE`/`OFFLINE`), `EnvironmentType` (`DYNAMIC`/`STATIC`).
 
 ### Role capabilities
 
@@ -543,14 +556,15 @@ backend/
     routes/            auth, twoFactor, users, companies, projects, suites,
                        cases, milestones, runs, executions, attachments,
                        comments, activity, dashboard, matrix, jira,
-                       sharedSteps, webhooks, imports
+                       sharedSteps, webhooks, imports, environments
 frontend/
   src/
     App.tsx            Router
     i18n/              en.json, fr.json — kept in sync (see CLAUDE.md)
     lib/               api, auth, status, logger, enums, markdown (safe renderer),
                        caseTree (run case picker tree + selection),
-                       caseModel (case shapes, parameter rows, history diff)
+                       caseModel (case shapes, parameter rows, history diff),
+                       currentProject (project from the URL, else the last opened)
     components/        Layout (collapsible, company header), Comments,
                        ActivityFeed, LanguageSwitcher, PasswordInput,
                        CustomFieldsEditor, SharedStepsEditor, WebhooksEditor,
@@ -558,14 +572,15 @@ frontend/
                        cases), CaseFilterBar, PriorityIcon, ui/MultiSelect,
                        ui/ActionMenu, repository/ (suite, case and Qase import
                        dialogs), case/ (CasePanel with its tabs, CaseEditor,
-                       StepsView, LinkedRequirements)
+                       StepsView, LinkedRequirements), ProjectRedirect,
+                       CompanyProfileCard
     pages/             Login, VerifyEmail, Dashboard, Projects, ProjectDetail
                        (the project's repository: suite tree + cases),
                        CompanySettings (company Jira creds + templates),
                        ProjectSettings (tabbed: Jira / custom fields /
                        shared steps / webhooks),
                        Team, Milestones, Matrix (coverage by platform /
-                       connectivity / locale),
+                       connectivity / locale), Environments,
                        SuiteDetail (redirects into the repository), CaseDetail (Markdown + shared-step
                        library + custom fields), Runs (list / kanban toggle),
                        RunDetail, Profile (password, 2FA, avatar),
@@ -634,7 +649,8 @@ All routes live under `/api`. Authentication is required except the public endpo
 | 2FA (auth)        | `GET /2fa/status`, `POST /2fa/setup`, `POST /2fa/confirm-setup`, `POST /2fa/disable`                            |
 | Tokens            | `GET /tokens`, `POST /tokens`, `DELETE /tokens/:id` — all require an interactive (JWT) session                  |
 | Users             | `GET /users`, `GET /users/me`, `POST /users` (mgr), `PATCH/DELETE /users/:id` (mgr), `PATCH /users/:id/lock` (mgr) |
-| Companies         | `GET /companies/current`, `PATCH /companies/current` (mgr)                                                      |
+| Companies         | `GET /companies/current`, `PATCH /companies/current` (mgr — `name`, `logo` as a PNG/JPEG/WebP/GIF data URL up to 400 KB, `null` removes it) |
+| Environments      | `GET /environments?projectId=` (with `runCount`, `lastRunAt`), `POST /environments` (mgr), `PATCH/DELETE /environments/:id` (mgr) |
 | Projects          | `GET /projects`, `POST /projects` (mgr), `GET/PATCH/DELETE /projects/:id`, `GET/PUT /projects/:id/custom-fields` (PUT mgr), `GET /projects/:id/case-tree` |
 | Requirements      | `GET /requirements?projectId=…`, `GET /requirements/:id`, `POST /requirements` (mgr), `PATCH/DELETE /requirements/:id` (mgr), `POST/DELETE /requirements/:id/cases[/:caseId]` (mgr) |
 | Shared steps      | `GET /shared-steps?projectId=…`, `POST /shared-steps` (mgr), `PATCH/DELETE /shared-steps/:id` (mgr)              |
@@ -644,7 +660,7 @@ All routes live under `/api`. Authentication is required except the public endpo
 | Excel import      | `GET /imports/cases/template.xlsx` (mgr), `POST /imports/cases/preview` (mgr, multipart — dry run), `POST /imports/cases` (mgr, multipart — commit) |
 | Qase JSON         | `POST /imports/qase/preview` (mgr, multipart `projectId` + `file` — dry run), `POST /imports/qase` (mgr, multipart — commit), `GET /imports/qase/export?projectId=` |
 | Milestones        | `GET /milestones`, `POST /milestones` (mgr), `PATCH/DELETE /milestones/:id` (mgr)                                |
-| Runs              | `GET /runs`, `POST /runs` (mgr), `GET/PATCH/DELETE /runs/:id`, `GET /runs/:id/export.csv`                        |
+| Runs              | `GET /runs`, `POST /runs` (mgr; `environmentId` picks a project environment, unknown → `ENVIRONMENT_NOT_IN_PROJECT`), `GET/PATCH/DELETE /runs/:id`, `GET /runs/:id/export.csv` |
 | Executions        | `GET /executions/:id`, `PATCH /executions/:id` (legacy runs only — per-combo runs must use `/execution-results/*`), `POST /executions/bulk-assign` |
 | Execution results | `PATCH /execution-results/:id`, `POST /execution-results/bulk` — per-combo status, failureReason, actualResult. `FAILED` requires both a reason and actual result. |
 | Attachments       | `POST /attachments` (multipart), `GET /attachments/:id/download`, `DELETE /attachments/:id`                      |
@@ -657,7 +673,7 @@ All routes live under `/api`. Authentication is required except the public endpo
 | Activity          | `GET /activity?projectId=…&entityType=…&entityId=…`                                                              |
 | Audit             | `GET /audit?userId=…&action=…&from=…&to=…&format=csv` (mgr)                                                      |
 | Case history      | `GET /cases/:id/revisions`                                                                                       |
-| Dashboard         | `GET /dashboard` — includes trend, releaseReadiness, defectAging                                                |
+| Dashboard         | `GET /dashboard?projectId=` — includes trend, releaseReadiness, defectAging (the UI always passes the current project) |
 | SAML (admin)      | `GET/PUT /saml/config` (admin); `GET /saml/:slug/login`, `POST /saml/:slug/acs` (public, IdP-facing)             |
 | SCIM tokens       | `GET/POST/DELETE /scim-tokens` (admin) — issue/revoke provisioning tokens                                       |
 | SCIM v2           | `GET/POST /scim/v2/Users`, `GET/PATCH/DELETE /scim/v2/Users/:id` (Bearer SCIM token)                             |

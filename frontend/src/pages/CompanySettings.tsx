@@ -9,6 +9,7 @@ import { PasswordInput } from "../components/PasswordInput";
 import { useConfirm } from "../components/ui/ConfirmDialog";
 import { Spinner } from "../components/Spinner";
 import { TestRunOptionsPanel } from "../components/TestRunOptionsPanel";
+import { CompanyProfileCard } from "../components/CompanyProfileCard";
 
 type CompanyJiraConfig = {
   baseUrl: string;
@@ -121,6 +122,8 @@ export function CompanySettings() {
         <h1 className="text-2xl font-bold">{t("company.settings_title")}</h1>
         <p className="text-sm text-slate-500">{t("company.settings_subtitle")}</p>
       </header>
+
+      {(user?.role === "MANAGER" || user?.role === "ADMIN") && <CompanyProfileCard />}
 
       <form noValidate onSubmit={onSubmit} className="card p-5 space-y-5">
         <div className="flex items-center justify-between">

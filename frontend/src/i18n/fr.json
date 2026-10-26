@@ -150,7 +150,10 @@
     "RUN_SUITES_NOT_IN_PROJECT": "Certaines suites sélectionnées n'appartiennent pas à ce projet.",
     "SUITE_INVALID_PARENT": "La suite parente doit être une autre suite de ce projet, hors de la suite déplacée.",
     "CASE_INVALID_SUITE": "Le cas ne peut être déplacé que vers une suite du même projet.",
-    "IMPORT_QASE_INVALID": "Ce fichier n'est pas un export JSON Qase."
+    "IMPORT_QASE_INVALID": "Ce fichier n'est pas un export JSON Qase.",
+    "ENVIRONMENT_SLUG_TAKEN": "Un autre environnement de ce projet utilise déjà ce slug.",
+    "ENVIRONMENT_NOT_IN_PROJECT": "Cet environnement n'appartient pas au projet de l'exécution.",
+    "ENVIRONMENT_NOT_FOUND": "Environnement introuvable."
   },
   "confirm": {
     "default_title": "Êtes-vous sûr ?",
@@ -165,7 +168,8 @@
     "company": "Entreprise",
     "admin": "Administration",
     "language": "Langue",
-    "open_menu": "Ouvrir le menu"
+    "open_menu": "Ouvrir le menu",
+    "repository": "Référentiel"
   },
   "auth": {
     "email": "E-mail",
@@ -206,7 +210,6 @@
   "dashboard": {
     "title": "Tableau de bord",
     "subtitle": "Aperçu de votre activité de tests.",
-    "projects": "Projets",
     "cases": "Cas de test",
     "runs": "Exécutions",
     "pass_rate": "Taux de réussite",
@@ -382,12 +385,9 @@
     "new_run": "Nouvelle exécution",
     "back_to_runs": "Retour aux exécutions",
     "no_options_configured": "Aucune option — ajoutez-en dans les paramètres de l'entreprise.",
-    "project": "Projet",
-    "select_project": "Sélectionner un projet…",
     "run_name": "Nom de l'exécution",
     "milestone": "Jalon",
     "environment": "Environnement",
-    "environment_placeholder": "dev / test / prod",
     "due_date": "Échéance",
     "default_assignee": "Assigné par défaut",
     "empty": "Aucune exécution.",
@@ -423,8 +423,6 @@
     "kanban_empty_col": "Rien ici.",
     "validation": {
       "name_required": "Le nom de l'exécution est requis.",
-      "project_required": "Sélectionnez d'abord un projet.",
-      "environment_required": "L'environnement est requis.",
       "case_required": "Sélectionnez au moins un cas de test."
     },
     "evidence_uploaded": "Pièce jointe téléversée.",
@@ -677,7 +675,15 @@
   },
   "company": {
     "settings_title": "Paramètres de l'entreprise",
-    "settings_subtitle": "La configuration Jira et les modèles s'appliquent à tous les projets de cette entreprise."
+    "settings_subtitle": "La configuration Jira et les modèles s'appliquent à tous les projets de cette entreprise.",
+    "profile_title": "Profil de l'entreprise",
+    "logo": "Logo de l'entreprise",
+    "upload_logo": "Téléverser un logo",
+    "change_logo": "Changer le logo",
+    "remove_logo": "Retirer le logo",
+    "name": "Nom de l'entreprise",
+    "name_required": "Le nom de l'entreprise est requis.",
+    "logo_unreadable": "Impossible de lire cette image."
   },
   "run_options": {
     "title": "Options de campagnes de test",
@@ -805,7 +811,6 @@
     "subtitle": "Dernier résultat par cas selon une dimension de configuration.",
     "dimension": "Dimension",
     "no_data": "Aucune exécution pour l'instant — lancez des tests pour remplir la matrice.",
-    "pick_project": "Sélectionnez un projet pour afficher la matrice.",
     "linked_not_executed": "Lié à une exigence mais jamais exécuté"
   },
   "activity": {
@@ -1014,5 +1019,47 @@
       "casesUpdated": "Cas mis à jour",
       "casesUnchanged": "Cas inchangés"
     }
+  },
+  "environments": {
+    "title": "Environnements",
+    "new": "Nouvel environnement",
+    "edit": "Modifier l'environnement",
+    "search": "Rechercher des environnements",
+    "empty": "Aucun environnement. Ajoutez les lieux où ce projet est testé, comme Développement, Recette et Production.",
+    "slug": "Slug",
+    "no_runs": "Aucune exécution",
+    "runs_one": "{{count}} exécution · dernière le {{date}}",
+    "runs_other": "{{count}} exécutions · dernière le {{date}}",
+    "delete_confirm": "Supprimer l'environnement « {{title}} » ?",
+    "delete_body": "Ses exécutions gardent son nom mais n'y sont plus liées.",
+    "type": {
+      "DYNAMIC": "Dynamique",
+      "STATIC": "Statique"
+    },
+    "type_label": "Type d'environnement",
+    "type_option": {
+      "DYNAMIC": "Dynamique (recommandé)",
+      "STATIC": "Statique"
+    },
+    "type_hint": {
+      "DYNAMIC": "Associe les environnements par motif d'hôte (ex. *.feature.company.com). Idéal pour les branches, les builds de prévisualisation et les déploiements CI.",
+      "STATIC": "Pointe vers une seule URL fixe. Idéal pour des environnements stables comme la recette ou la production."
+    },
+    "host_label": {
+      "DYNAMIC": "Motif d'hôte",
+      "STATIC": "URL"
+    },
+    "host_placeholder": {
+      "DYNAMIC": "Motif d'hôte, ex. *.production.company.com",
+      "STATIC": "https://staging.company.com"
+    },
+    "field_title": "Titre",
+    "title_placeholder": "Nom de l'environnement, ex. Production",
+    "description_placeholder": "Quelques phrases sur cet environnement",
+    "validation": {
+      "required": "Le titre, le slug et l'hôte sont requis.",
+      "slug": "Le slug ne peut contenir que des minuscules, des chiffres et des tirets."
+    },
+    "none_yet_link": "Aucun environnement — en ajouter"
   }
 }

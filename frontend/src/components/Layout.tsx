@@ -4,11 +4,13 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, FolderKanban, PlayCircle, Grid3x3, Users,
   Building2, LogOut, ChevronLeft, ChevronRight, Globe, KeyRound,
-  ShieldCheck, FileSearch, Menu, X, UserCircle,
+  ShieldCheck, FileSearch, Menu, X, UserCircle, ListTree, Boxes,
+  Flag, ListChecks, Settings,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../lib/auth";
 import { api } from "../lib/api";
+import { useCurrentProjectId } from "../lib/currentProject";
 import { SUPPORTED_LANGUAGES } from "../i18n";
 import { logger } from "../lib/logger";
 import { Logo } from "./Logo";
@@ -61,14 +63,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
     queryFn: async () => (await api.get("/projects")).data,
     enabled: !!user,
   });
-  const activeProjectId = location.pathname.match(/^\/projects\/([^/]+)/)?.[1] ?? null;
+  // The project being worked in: the one in the URL, else the last one opened
+  // (so a run page, which lives under /runs/:id, keeps its project open).
+  const activeProjectId = useCurrentProjectId();
+  const { data: company } = useQuery<{ logo: string | null }>({
+    queryKey: ["company"],
+    queryFn: async () => (await api.get("/companies/current")).data,
+    enabled: !!user,
+  });
 
-  const nav = [
-    { to: "/", icon: LayoutDashboard, label: t("nav.dashboard") },
-    { to: "/projects", icon: FolderKanban, label: t("nav.projects") },
-    { to: "/runs", icon: PlayCircle, label: t("nav.runs") },
-    { to: "/matrix", icon: Grid3x3, label: t("matrix.title") },
+  const nav = [{ to: "/projects", icon: FolderKanban, label: t("nav.projects") }];
+  // Every page of a project lives under it, Qase style.
+  const projectNav = (id: string) => [
+    { to: `/projects/${id}/dashboard`, icon: LayoutDashboard, label: t("nav.dashboard"), end: true },
+    { to: `/projects/${id}`, icon: ListTree, label: t("nav.repository"), end: true },
+    { to: `/projects/${id}/runs`, icon: PlayCircle, label: t("nav.runs"), end: false },
+    { to: `/projects/${id}/environments`, icon: Boxes, label: t("environments.title"), end: true },
+    { to: `/projects/${id}/milestones`, icon: Flag, label: t("projects.milestones"), end: true },
+    { to: `/projects/${id}/requirements`, icon: ListChecks, label: t("requirements.title"), end: true },
+    { to: `/projects/${id}/matrix`, icon: Grid3x3, label: t("matrix.title"), end: true },
+    ...(isManager ? [{ to: `/projects/${id}/settings`, icon: Settings, label: t("projects.settings"), end: true }] : []),
   ];
+  const onRunPage = /^\/runs\/[^/]+/.test(location.pathname);
   const adminNav = [
     ...(isManager ? [{ to: "/team", icon: Users, label: t("team.title") }] : []),
     ...(isManager ? [{ to: "/audit", icon: FileSearch, label: t("audit.title") }] : []),
@@ -174,9 +190,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
             title={user.company.name}
           >
-            <div className="w-8 h-8 rounded-md bg-brand-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
-              {companyInitials}
-            </div>
+            {company?.logo ? (
+              <img src={company.logo} alt="" className="w-8 h-8 rounded-md object-cover flex-shrink-0" />
+            ) : (
+              <div className="w-8 h-8 rounded-md bg-brand-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                {companyInitials}
+              </div>
+            )}
             <div className={clsx("min-w-0 flex-1", collapsed && "md:hidden")}>
               <div className="text-[0.625rem] uppercase tracking-wide text-slate-500">{t("nav.company")}</div>
               <div className="text-sm font-semibold truncate">{user.company.name}</div>
@@ -205,24 +225,50 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <span className={clsx("truncate", collapsed && "md:hidden")}>{label}</span>
             </NavLink>
             {to === "/projects" && projects.length > 0 && (
-              <div className={clsx("ml-5 border-l border-slate-200 pl-2 dark:border-slate-700 space-y-0.5", collapsed && "md:hidden")}>
+              <div className={clsx("ml-5 border-l border-slate-200 pl-2 dark:border-slate-700 space-y-0.5", collapsed && "md:ml-0 md:border-0 md:pl-0")}>
                 {projects.map((p) => (
-                  <Link
-                    key={p.id}
-                    to={`/projects/${p.id}`}
-                    title={p.name}
-                    className={clsx(
-                      "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition",
-                      p.id === activeProjectId
-                        ? "bg-brand-50 font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
-                        : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800",
+                  <Fragment key={p.id}>
+                    <Link
+                      to={`/projects/${p.id}/dashboard`}
+                      title={p.name}
+                      className={clsx(
+                        "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition",
+                        collapsed && "md:hidden",
+                        p.id === activeProjectId
+                          ? "font-semibold text-slate-900 dark:text-slate-100"
+                          : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800",
+                      )}
+                    >
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-slate-200 text-[0.625rem] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
+                        {p.key.slice(0, 2)}
+                      </span>
+                      <span className="truncate">{p.name}</span>
+                    </Link>
+                    {p.id === activeProjectId && (
+                      <div className={clsx("ml-3 space-y-0.5", collapsed && "md:ml-0")}>
+                        {projectNav(p.id).map((item) => (
+                          <NavLink
+                            key={item.to}
+                            to={item.to}
+                            end={item.end}
+                            title={collapsed ? item.label : undefined}
+                            className={({ isActive }) =>
+                              clsx(
+                                "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition",
+                                collapsed && "md:justify-center",
+                                isActive || (onRunPage && item.to.endsWith("/runs"))
+                                  ? "bg-brand-50 font-medium text-brand-700 dark:bg-brand-500/15 dark:text-brand-300"
+                                  : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800",
+                              )
+                            }
+                          >
+                            <item.icon size={16} className="shrink-0" />
+                            <span className={clsx("truncate", collapsed && "md:hidden")}>{item.label}</span>
+                          </NavLink>
+                        ))}
+                      </div>
                     )}
-                  >
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-slate-200 text-[0.625rem] font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-200">
-                      {p.key.slice(0, 2)}
-                    </span>
-                    <span className="truncate">{p.name}</span>
-                  </Link>
+                  </Fragment>
                 ))}
               </div>
             )}

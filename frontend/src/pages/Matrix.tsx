@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { execStatusColors } from "../lib/status";
 import { testLevelColors } from "../lib/enums";
@@ -13,13 +13,8 @@ const DIMENSIONS: Dimension[] = ["platform", "connectivity", "locale", "requirem
 export function Matrix() {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
-  const projectId = params.get("projectId") ?? "";
+  const { id: projectId = "" } = useParams();
   const [dimension, setDimension] = useState<Dimension>((params.get("dimension") as Dimension) ?? "platform");
-
-  const { data: projects = [] } = useQuery({
-    queryKey: ["projects"],
-    queryFn: async () => (await api.get("/projects")).data,
-  });
 
   const { data: matrix, error } = useQuery({
     queryKey: ["matrix", projectId, dimension],
@@ -30,12 +25,6 @@ export function Matrix() {
   useMemo(() => {
     if (error) logger.error("matrix fetch failed", { projectId, dimension, error: String(error) });
   }, [error, projectId, dimension]);
-
-  function selectProject(id: string) {
-    const next = new URLSearchParams(params);
-    next.set("projectId", id);
-    setParams(next);
-  }
 
   function selectDimension(d: Dimension) {
     setDimension(d);
@@ -53,13 +42,6 @@ export function Matrix() {
 
       <div className="flex gap-3 flex-wrap items-end">
         <div>
-          <label className="label">{t("runs.project")}</label>
-          <select className="input" value={projectId} onChange={(e) => selectProject(e.target.value)}>
-            <option value="">{t("runs.select_project")}</option>
-            {projects.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </div>
-        <div>
           <label className="label">{t("matrix.dimension")}</label>
           <div className="flex gap-1">
             {DIMENSIONS.map((d) => (
@@ -75,7 +57,6 @@ export function Matrix() {
         </div>
       </div>
 
-      {!projectId && <div className="card p-10 text-center text-slate-500">{t("matrix.pick_project")}</div>}
 
       {projectId && matrix && matrix.buckets.length === 0 && (
         <div className="card p-10 text-center text-slate-500">{t("matrix.no_data")}</div>

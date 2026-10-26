@@ -150,7 +150,10 @@
     "RUN_SUITES_NOT_IN_PROJECT": "Some of the selected suites don't belong to this project.",
     "SUITE_INVALID_PARENT": "The parent suite must be another suite of this project, outside the suite being moved.",
     "CASE_INVALID_SUITE": "The case can only move to a suite of the same project.",
-    "IMPORT_QASE_INVALID": "This file is not a Qase JSON export."
+    "IMPORT_QASE_INVALID": "This file is not a Qase JSON export.",
+    "ENVIRONMENT_SLUG_TAKEN": "Another environment of this project already uses this slug.",
+    "ENVIRONMENT_NOT_IN_PROJECT": "This environment does not belong to the run's project.",
+    "ENVIRONMENT_NOT_FOUND": "Environment not found."
   },
   "confirm": {
     "default_title": "Are you sure?",
@@ -165,7 +168,8 @@
     "company": "Company",
     "admin": "Admin",
     "language": "Language",
-    "open_menu": "Open menu"
+    "open_menu": "Open menu",
+    "repository": "Repository"
   },
   "auth": {
     "email": "Email",
@@ -187,7 +191,6 @@
   "dashboard": {
     "title": "Dashboard",
     "subtitle": "Overview of your testing activity.",
-    "projects": "Projects",
     "cases": "Test Cases",
     "runs": "Test Runs",
     "pass_rate": "Pass Rate",
@@ -363,12 +366,9 @@
     "new_run": "New run",
     "back_to_runs": "Back to runs",
     "no_options_configured": "No options — add one in Company settings.",
-    "project": "Project",
-    "select_project": "Select project…",
     "run_name": "Run name",
     "milestone": "Milestone",
     "environment": "Environment",
-    "environment_placeholder": "dev / test / prod",
     "due_date": "Due date",
     "default_assignee": "Default assignee",
     "empty": "No test runs yet.",
@@ -404,8 +404,6 @@
     "kanban_empty_col": "Nothing here.",
     "validation": {
       "name_required": "Run name is required.",
-      "project_required": "Pick a project first.",
-      "environment_required": "Environment is required.",
       "case_required": "Select at least one test case."
     },
     "evidence_uploaded": "Evidence uploaded.",
@@ -677,7 +675,15 @@
   },
   "company": {
     "settings_title": "Company settings",
-    "settings_subtitle": "Jira integration and templates apply to every project in this company."
+    "settings_subtitle": "Jira integration and templates apply to every project in this company.",
+    "profile_title": "Company profile",
+    "logo": "Company logo",
+    "upload_logo": "Upload logo",
+    "change_logo": "Change logo",
+    "remove_logo": "Remove logo",
+    "name": "Company name",
+    "name_required": "Company name is required.",
+    "logo_unreadable": "This image could not be read."
   },
   "run_options": {
     "title": "Test run options",
@@ -805,7 +811,6 @@
     "subtitle": "Latest result per case across a configuration dimension.",
     "dimension": "Dimension",
     "no_data": "No executions yet — run some tests to populate the matrix.",
-    "pick_project": "Select a project to view the matrix.",
     "linked_not_executed": "Linked to requirement but never executed"
   },
   "activity": {
@@ -1014,5 +1019,47 @@
       "casesUpdated": "Test cases updated",
       "casesUnchanged": "Test cases unchanged"
     }
+  },
+  "environments": {
+    "title": "Environments",
+    "new": "New environment",
+    "edit": "Edit environment",
+    "search": "Search environments",
+    "empty": "No environments yet. Add the places this project is tested, such as Development, Stage and Production.",
+    "slug": "Slug",
+    "no_runs": "No runs yet",
+    "runs_one": "{{count}} run · last on {{date}}",
+    "runs_other": "{{count}} runs · last on {{date}}",
+    "delete_confirm": "Delete the \"{{title}}\" environment?",
+    "delete_body": "Runs on it keep its name but are no longer linked to it.",
+    "type": {
+      "DYNAMIC": "Dynamic",
+      "STATIC": "Static"
+    },
+    "type_label": "Environment type",
+    "type_option": {
+      "DYNAMIC": "Dynamic (Recommended)",
+      "STATIC": "Static"
+    },
+    "type_hint": {
+      "DYNAMIC": "Matches environments by host pattern (e.g. *.feature.company.com). Ideal for feature branches, preview builds and CI deployments.",
+      "STATIC": "Points to a single static URL. Best for stable environments like staging or production."
+    },
+    "host_label": {
+      "DYNAMIC": "Host pattern",
+      "STATIC": "URL"
+    },
+    "host_placeholder": {
+      "DYNAMIC": "Enter host pattern, e.g. *.production.company.com",
+      "STATIC": "https://staging.company.com"
+    },
+    "field_title": "Title",
+    "title_placeholder": "Enter environment name, e.g. Production",
+    "description_placeholder": "Write a few sentences about your environment",
+    "validation": {
+      "required": "Title, slug and host are required.",
+      "slug": "The slug may hold lowercase letters, digits and dashes."
+    },
+    "none_yet_link": "No environments yet — add them"
   }
 }

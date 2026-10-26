@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   AlertTriangle,
@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   Clock,
   FileText,
-  FolderKanban,
   ListChecks,
   Play,
   Rocket,
@@ -64,12 +63,14 @@ const statusOrder: StatusKey[] = ["PASSED", "FAILED", "BLOCKED", "SKIPPED", "PEN
 
 export function Dashboard() {
   const { t } = useTranslation();
+  // The dashboard of the current project (Qase style); the API scopes every figure to it.
+  const { id: projectId } = useParams();
   const { data, isLoading, error } = useQuery({
-    queryKey: ["dashboard"],
-    queryFn: async () => (await api.get("/dashboard")).data,
+    queryKey: ["dashboard", projectId],
+    queryFn: async () => (await api.get("/dashboard", { params: { projectId } })).data,
   });
 
-  if (error) logger.error("dashboard fetch failed", { error: String(error) });
+  if (error) logger.error("dashboard fetch failed", { projectId, error: String(error) });
   if (isLoading) return <PageLoader />;
   if (!data) return null;
 
@@ -78,7 +79,6 @@ export function Dashboard() {
     passRate >= 85 ? "emerald" : passRate >= 60 ? "amber" : "red";
 
   const stats = [
-    { label: t("dashboard.projects"), value: data.totals.projects, icon: FolderKanban, tone: "indigo" },
     { label: t("dashboard.cases"),    value: data.totals.cases,    icon: FileText,     tone: "slate" },
     { label: t("dashboard.runs"),     value: data.totals.runs,     icon: Play,         tone: "violet" },
     { label: t("dashboard.pass_rate"), value: `${passRate}%`,      icon: Target,       tone: passTone },
@@ -105,7 +105,7 @@ export function Dashboard() {
         <p className="text-sm text-slate-500">{t("dashboard.subtitle")}</p>
       </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {stats.map((s) => {
           const c = toneClasses[s.tone];
           const Icon = s.icon;

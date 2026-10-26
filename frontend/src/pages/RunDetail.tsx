@@ -233,13 +233,13 @@ export function RunDetail() {
       <header className="flex items-start justify-between gap-4">
         <div>
           <Link
-            to={`/runs?projectId=${run.projectId}`}
+            to={`/projects/${run.projectId}/runs`}
             className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 mb-2"
           >
             <ArrowLeft size={12} /> {t("runs.back_to_runs")}
           </Link>
           <div className="text-xs text-slate-500 mb-1 flex items-center gap-2 flex-wrap">
-            <Link to={`/runs?projectId=${run.projectId}`} className="hover:underline">{run.project.name}</Link>
+            <Link to={`/projects/${run.projectId}/runs`} className="hover:underline">{run.project.name}</Link>
             {run.milestone && <Badge tone="violet">{run.milestone.name}</Badge>}
             {run.environment && <Badge tone="neutral">{run.environment}</Badge>}
             {run.dueDate && <span>{t("runs.due_on", { date: new Date(run.dueDate).toLocaleDateString() })}</span>}
